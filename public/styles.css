@@ -4,7 +4,8 @@ html, body {
   min-height: 100vh;
   width: 100%;
   overflow: hidden;
-  background: linear-gradient(to bottom, #000, #222); /* Match container background */
+  background: #000; /* Solid black fallback */
+  background: linear-gradient(to bottom, #000, #222); /* Gradient on top */
 }
 
 .container {
@@ -15,7 +16,7 @@ html, body {
   width: 100%;
   flex-wrap: nowrap;
   background: linear-gradient(to bottom, #000, #222);
-  position: fixed; /* Pin to viewport */
+  position: fixed;
   top: 0;
   left: 0;
 }

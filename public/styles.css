@@ -1,5 +1,3 @@
-/* styles.css — mobile‑first */
-
 html, body {
   margin: 0;
   padding: 0;
@@ -18,22 +16,18 @@ html, body {
   justify-content: center;
   align-items: center;
   background: linear-gradient(to bottom, #000, #222);
-  /* allow JS to intercept touch moves */
-  touch-action: none;
 }
 
 #cube-container {
   position: relative;
   z-index: 1;
-  /* make the cube fill most of the viewport on mobile */
-  width: 60vw;
-  height: 60vw;
+  width: 100px;
+  height: 100px;
 }
 
 .text-column {
   position: relative;
-  /* narrow columns on mobile, leave space for cube */
-  width: 20vw;
+  width: 30%;
   height: 100%;
   color: #fff;
 }
@@ -52,22 +46,21 @@ html, body {
 }
 
 .text-block {
-  /* base spacing so blocks don’t collapse on phones */
-  margin-bottom: 50px;
+  /* we’re driving opacity + transform entirely in JS now */
   opacity: 0;
   transform: translateY(20px);
+  /* remove any transition here */
   will-change: opacity, transform;
 }
 
+
 .text-content p {
   margin: 0;
-  /* responsive font on mobile */
-  font-size: 4vw;
+  font-size: 12px;
   line-height: 1.5;
   text-shadow: 0 0 3px #fff;
 }
 
-/* Desktop overrides */
 @media (min-width: 769px) {
   #cube-container {
     width: 400px;

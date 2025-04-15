@@ -15,29 +15,38 @@ document.addEventListener('DOMContentLoaded', () => {
     0.1,
     1000
   );
+  camera.position.z = 2;
+
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
-  renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(window.devicePixelRatio);
   cubeContainer.appendChild(renderer.domElement);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(0, 1, 1);
-  scene.add(dirLight);
+  scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-  const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({
-      color: 0xcccccc,
-      metalness: 0.8,
-      roughness: 0.2
-    })
-  );
-  scene.add(cube);
-  camera.position.z = 2;
+  // — HOLLOW NEON CUBE —  
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const edges = new THREE.EdgesGeometry(geometry);
 
-  // — TEXT CONTAINERS & MESSAGES —
+  // Bright core wireframe
+  const brightMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color('hsl(200, 100%, 60%)'),
+  });
+  const wireframe = new THREE.LineSegments(edges, brightMat);
+
+  // Faint, slightly scaled wireframe for glow
+  const glowMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color('hsl(200, 100%, 60%)'),
+    transparent: true,
+    opacity: 0.4,
+  });
+  const glowWireframe = new THREE.LineSegments(edges, glowMat);
+  glowWireframe.scale.set(1.1, 1.1, 1.1);
+
+  scene.add(glowWireframe);
+  scene.add(wireframe);
+
+  // — TEXT SETUP (unchanged) —
   const leftText  = document.getElementById('left-text');
   const rightText = document.getElementById('right-text');
 
@@ -74,29 +83,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // — STATE & CONFIG —
-  let blockHeight     = 0;               // height + margin of one line
+  let blockHeight     = 0;
   const blocksCount   = leftMessages.length;
-  let contentHeight   = 0;               // total scrollable height
-  let rotationFactor  = 0;               // cube‑rotation per px
-  let virtualScroll   = 0;               // cumulative scroll
-  let textBlocks      = [];              // cached .text-block nodes
-  const fadeRange     = 150;             // px from center → opacity 0
-  const translateMax  = 20;              // px shift when fully faded
-  const touchMult     = 2;               // touch sensitivity
-  let centerOffset    = 0;               // initial translateY to center first block
+  let contentHeight   = 0;
+  let rotationFactor  = 0;
+  let virtualScroll   = 0;
+  let textBlocks      = [];
+  const fadeRange     = 150;
+  const translateMax  = 20;
+  const touchMult     = 2;
+  let centerOffset    = 0;
 
-  // ease‑in/out quad
   const easeInOutQuad = x =>
     x < 0.5 ? 2 * x * x : 1 - ((-2 * x + 2) ** 2) / 2;
 
   // — INITIALIZE TEXT + METRICS —
   function setup() {
-    // populate both columns
     leftMessages.forEach(m => leftText.appendChild(createTextBlock(m)));
     rightMessages.forEach(m => rightText.appendChild(createTextBlock(m)));
     textBlocks = Array.from(document.querySelectorAll('.text-block'));
 
-    // measure after next paint
     requestAnimationFrame(() => {
       const first = textBlocks[0];
       const rect  = first.getBoundingClientRect();
@@ -106,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
       blockHeight    = rect.height + mb;
       contentHeight  = blockHeight * blocksCount;
       rotationFactor = Math.PI / blockHeight;
-      // centerOffset so that first block is centered on load
       centerOffset   = (window.innerHeight / 2) - (rect.height / 2);
 
       updateScene();
@@ -115,27 +120,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // — RENDER & FADE LOOP —
   function updateScene() {
-    // rotate cube
-    cube.rotation.y = -virtualScroll * rotationFactor;
+    // rotate both wireframes
+    glowWireframe.rotation.y = -virtualScroll * rotationFactor;
+    wireframe.rotation.y     = -virtualScroll * rotationFactor;
 
-    // compute wrapped scroll remainder
+    // hue shift
+    const hue = (virtualScroll * 0.1) % 360;
+    const h = (hue + 360) % 360 / 360;
+    brightMat.color.setHSL(h, 1, 0.6);
+    glowMat.color.setHSL(h, 1, 0.6);
+
+    // text scroll
     const r = ((virtualScroll % contentHeight) + contentHeight) % contentHeight;
-    // translate so that block 0 starts at center, then scroll up as r increases
     const offset = centerOffset - r;
-
     leftText.style.transform  = `translateY(${offset}px)`;
     rightText.style.transform = `translateY(${offset}px)`;
 
-    // per‑line fade & translate
+    // text fade
     const midY = window.innerHeight / 2;
     textBlocks.forEach(block => {
-      const bRect       = block.getBoundingClientRect();
-      const bCenter     = bRect.top + bRect.height / 2;
-      const dist        = Math.abs(bCenter - midY);
-      const t           = Math.min(dist / fadeRange, 1);
-      const eased       = easeInOutQuad(t);
-      const opacity     = 1 - eased;
-
+      const bRect   = block.getBoundingClientRect();
+      const bCenter = bRect.top + bRect.height / 2;
+      const dist    = Math.abs(bCenter - midY);
+      const t       = Math.min(dist / fadeRange, 1);
+      const eased   = easeInOutQuad(t);
+      const opacity = 1 - eased;
       block.style.opacity   = opacity;
       block.style.transform = `translateY(${translateMax * (1 - opacity)}px)`;
     });
@@ -171,14 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // — HANDLE RESIZE —
   window.addEventListener('resize', () => {
-    // update three.js viewport
     const w = cubeContainer.clientWidth;
     const h = cubeContainer.clientHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
 
-    // re‑measure block height & centerOffset
     const first = textBlocks[0];
     const rect  = first.getBoundingClientRect();
     const style = window.getComputedStyle(first);

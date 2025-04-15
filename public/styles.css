@@ -67,7 +67,7 @@ html, body {
     height: 400px;
   }
   .text-column {
-    width: 300px;
+    width: 360px;
   }
   .text-content {
     padding: 20px;
@@ -77,6 +77,6 @@ html, body {
     text-shadow: 0 0 5px #fff;
   }
   .text-block {
-    margin-bottom: 30px;
+    margin-bottom: 240px;
   }
 }

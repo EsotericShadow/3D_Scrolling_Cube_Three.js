@@ -6,6 +6,7 @@ const camera = new THREE.PerspectiveCamera(75, cubeContainer.clientWidth / cubeC
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
 renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(window.devicePixelRatio);
 cubeContainer.appendChild(renderer.domElement);
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -30,12 +31,15 @@ const leftText = document.querySelector('.text-column.left .text-content');
 const rightText = document.querySelector('.text-column.right .text-content');
 const textHeight = document.querySelector('.text-inner').offsetHeight;
 
+const touchMultiplier = 2; // Adjustable: 1 to 4
+const rotationFactor = Math.PI / textHeight; // 180 degrees per text loop
+
 if (!isMobile) {
   window.addEventListener('wheel', (event) => {
     event.preventDefault();
     const delta = event.deltaY;
     virtualScroll += delta;
-    cube.rotation.y = -virtualScroll * 0.005;
+    cube.rotation.y = -virtualScroll * rotationFactor;
     let offset = -((virtualScroll % textHeight + textHeight) % textHeight);
     leftText.style.transform = `translateY(${offset}px)`;
     rightText.style.transform = `translateY(${offset}px)`;
@@ -43,20 +47,23 @@ if (!isMobile) {
   }, { passive: false });
 } else {
   let lastTouchY = 0;
+  window.addEventListener('touchstart', (event) => {
+    event.preventDefault();
+    lastTouchY = event.touches[0].clientY;
+  }, { passive: false });
+
   window.addEventListener('touchmove', (event) => {
+    event.preventDefault();
     const touch = event.touches[0];
-    const delta = (lastTouchY - touch.clientY) * 3; // Amplify touch delta for smoother interaction
+    const delta = (lastTouchY - touch.clientY) * touchMultiplier;
     lastTouchY = touch.clientY;
     virtualScroll += delta;
-    cube.rotation.y = -virtualScroll * 0.005;
+    cube.rotation.y = -virtualScroll * rotationFactor;
     let offset = -((virtualScroll % textHeight + textHeight) % textHeight);
     leftText.style.transform = `translateY(${offset}px)`;
     rightText.style.transform = `translateY(${offset}px)`;
     requestAnimationFrame(render);
   }, { passive: false });
-  window.addEventListener('touchstart', (event) => {
-    lastTouchY = event.touches[0].clientY;
-  });
 }
 
 render();

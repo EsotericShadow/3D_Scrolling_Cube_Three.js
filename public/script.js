@@ -1,12 +1,12 @@
-// script.js — using Pointer Events for mobile + desktop
-
+// script.js
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
-  // — Detect coarse (touch) pointers —
-  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  // — Detect touch / mobile —
+  const isMobile = window.matchMedia('(max-width: 768px)').matches
+    || 'ontouchstart' in window;
 
-  // — THREE.JS SETUP (unchanged) —
+  // — THREE.JS SETUP —
   const scene = new THREE.Scene();
   const cubeContainer = document.getElementById('cube-container');
   const camera = new THREE.PerspectiveCamera(
@@ -24,76 +24,178 @@ document.addEventListener('DOMContentLoaded', () => {
 
   scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-  // … your neon cube setup …
+  // — HOLLOW NEON CUBE —  
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const edges = new THREE.EdgesGeometry(geometry);
+
+  // Bright core wireframe
+  const brightMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color('hsl(200, 100%, 60%)'),
+  });
+  const wireframe = new THREE.LineSegments(edges, brightMat);
+
+  // Faint, slightly scaled wireframe for glow
+  const glowMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color('hsl(200, 100%, 60%)'),
+    transparent: true,
+    opacity: 0.4,
+  });
+  const glowWireframe = new THREE.LineSegments(edges, glowMat);
+  glowWireframe.scale.set(1.1, 1.1, 1.1);
+
+  scene.add(glowWireframe);
+  scene.add(wireframe);
 
   // — TEXT SETUP (unchanged) —
-  // leftText, rightText, messages arrays, createTextBlock(), etc.
+  const leftText  = document.getElementById('left-text');
+  const rightText = document.getElementById('right-text');
 
-  // — STATE & CONFIG (unchanged) —
-  let blockHeight = 0;
-  const blocksCount = leftMessages.length;
-  let contentHeight = 0;
-  let rotationFactor = 0;
-  let virtualScroll = 0;
-  let textBlocks = [];
-  const fadeRange = 150;
-  const translateMax = 20;
-  const touchMult = 2;
-  let centerOffset = 0;
+  const leftMessages = [
+    'Designs that defy convention.',
+    'Minimalist. Modular. Mind‑blowing.',
+    'Web experiences with a pulse.',
+    'A new dimension of interactivity.',
+    'Explore the edge of digital design.',
+    'Your brand in real time.',
+    'Precision meets emotion.',
+    "Design that's alive.",
+    'Technically beautiful.',
+    'Inspired by the future.'
+  ];
+  const rightMessages = [
+    'Enter a hyper‑immersive world.',
+    'Innovation meets aesthetics.',
+    '3D is just the beginning.',
+    'Crafted for high‑speed minds.',
+    'From code to consciousness.',
+    'Made for visionaries.',
+    'Where tech meets art.',
+    'Interactive identity design.',
+    'Design beyond the screen.',
+    'Step into another layer.'
+  ];
+
+  function createTextBlock(msg) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'text-inner';
+    wrapper.innerHTML = `<div class="text-block"><p>${msg}</p></div>`;
+    return wrapper;
+  }
+
+  // — STATE & CONFIG —
+  let blockHeight     = 0;
+  const blocksCount   = leftMessages.length;
+  let contentHeight   = 0;
+  let rotationFactor  = 0;
+  let virtualScroll   = 0;
+  let textBlocks      = [];
+  const fadeRange     = 150;
+  const translateMax  = 20;
+  const touchMult     = 2;
+  let centerOffset    = 0;
+
   const easeInOutQuad = x =>
     x < 0.5 ? 2 * x * x : 1 - ((-2 * x + 2) ** 2) / 2;
 
+  // — INITIALIZE TEXT + METRICS —
   function setup() {
-    // … append text blocks …
+    leftMessages.forEach(m => leftText.appendChild(createTextBlock(m)));
+    rightMessages.forEach(m => rightText.appendChild(createTextBlock(m)));
+    textBlocks = Array.from(document.querySelectorAll('.text-block'));
+
     requestAnimationFrame(() => {
-      // … measure blockHeight, contentHeight, rotationFactor, centerOffset …
+      const first = textBlocks[0];
+      const rect  = first.getBoundingClientRect();
+      const style = window.getComputedStyle(first);
+      const mb    = parseFloat(style.marginBottom);
+
+      blockHeight    = rect.height + mb;
+      contentHeight  = blockHeight * blocksCount;
+      rotationFactor = Math.PI / blockHeight;
+      centerOffset   = (window.innerHeight / 2) - (rect.height / 2);
+
       updateScene();
     });
   }
 
+  // — RENDER & FADE LOOP —
   function updateScene() {
-    // … rotate cube, hue shift, scroll + fade text, render …
+    // rotate both wireframes
+    glowWireframe.rotation.y = -virtualScroll * rotationFactor;
+    wireframe.rotation.y     = -virtualScroll * rotationFactor;
+
+    // hue shift
+    const hue = (virtualScroll * 0.1) % 360;
+    const h = (hue + 360) % 360 / 360;
+    brightMat.color.setHSL(h, 1, 0.6);
+    glowMat.color.setHSL(h, 1, 0.6);
+
+    // text scroll
+    const r = ((virtualScroll % contentHeight) + contentHeight) % contentHeight;
+    const offset = centerOffset - r;
+    leftText.style.transform  = `translateY(${offset}px)`;
+    rightText.style.transform = `translateY(${offset}px)`;
+
+    // text fade
+    const midY = window.innerHeight / 2;
+    textBlocks.forEach(block => {
+      const bRect   = block.getBoundingClientRect();
+      const bCenter = bRect.top + bRect.height / 2;
+      const dist    = Math.abs(bCenter - midY);
+      const t       = Math.min(dist / fadeRange, 1);
+      const eased   = easeInOutQuad(t);
+      const opacity = 1 - eased;
+      block.style.opacity   = opacity;
+      block.style.transform = `translateY(${translateMax * (1 - opacity)}px)`;
+    });
+
+    renderer.render(scene, camera);
   }
 
-  // — INPUT HANDLERS —  
+  // — INPUT HANDLERS —
   function onWheel(e) {
     e.preventDefault();
     virtualScroll += e.deltaY;
     updateScene();
   }
 
-  let lastY = 0;
-  function onPointerDown(e) {
-    if (e.pointerType === 'touch') {
-      lastY = e.clientY;
-    }
+  function onTouchStart(e) {
+    lastY = e.touches[0].clientY;
   }
 
-  function onPointerMove(e) {
-    if (e.pointerType !== 'touch') return;
-    e.preventDefault();
-    const y = e.clientY;
+  function onTouchMove(e) {
+    const y = e.touches[0].clientY;
     virtualScroll += (lastY - y) * touchMult;
     lastY = y;
     updateScene();
   }
 
-  if (!isTouch) {
+  if (!isMobile) {
     window.addEventListener('wheel', onWheel, { passive: false });
   } else {
-    // unify touch with pointer events
-    window.addEventListener('pointerdown', onPointerDown, { passive: false });
-    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    let lastY = 0;
+    window.addEventListener('touchstart', onTouchStart, { passive: false });
+    window.addEventListener('touchmove',  onTouchMove,  { passive: false });
   }
 
-  // — RESIZE HANDLING (unchanged) —
+  // — HANDLE RESIZE —
   window.addEventListener('resize', () => {
     const w = cubeContainer.clientWidth;
     const h = cubeContainer.clientHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    // … recalc blockHeight, contentHeight, rotationFactor, centerOffset …
+
+    const first = textBlocks[0];
+    const rect  = first.getBoundingClientRect();
+    const style = window.getComputedStyle(first);
+    const mb    = parseFloat(style.marginBottom);
+
+    blockHeight    = rect.height + mb;
+    contentHeight  = blockHeight * blocksCount;
+    rotationFactor = Math.PI / blockHeight;
+    centerOffset   = (window.innerHeight / 2) - (rect.height / 2);
+
     updateScene();
   });
 

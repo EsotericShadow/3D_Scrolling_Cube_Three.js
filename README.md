@@ -1,150 +1,155 @@
-
-
-# 📄 Neon Cube – Project Documentation
-
-## Overview
-
-**Neon Cube** is a futuristic, immersive web experience that showcases a rotating, glowing 3D cube built with `Three.js`, surrounded by vertically scrolling text columns. User interactions like mouse wheels or touch gestures change the cube's orientation and cycle through paired text blocks, producing a dynamic, cyber-themed effect.
+📄 **Neon Cube – Project Documentation**
 
 ---
 
-## 🧱 File Structure
+### Overview
 
-```
-index.html        # Main HTML structure
-styles.css        # Styling for layout and typography
-script.js         # JavaScript for 3D rendering and interaction logic
-```
+Neon Cube is a futuristic, immersive web experience that showcases a rotating, glowing 3D cube built with Three.js and accompanied by vertically scrolling text columns. User interactions via mouse wheel or touch gestures drive the cube’s orientation changes and cycle through paired text blocks, creating a dynamic, cyber-themed effect. The project now features enhanced rotation logic to ensure that horizontal swipes are applied relative to the cube’s current vertical orientation. This prevents unintended diagonal rotations by switching the horizontal control axis (Y vs. Z) depending on the cube’s vertical flip state.
 
 ---
 
-## 🔹 `index.html`
+### 🧱 File Structure
 
-### Purpose
+- **index.html** — Main HTML structure
+- **styles.css** — Styling for layout, typography, and visual effects
+- **script.js** — JavaScript for 3D rendering, gesture handling, and animation logic
+
+---
+
+### 🔹 index.html
+
+**Purpose:**  
 Defines the basic layout and structure of the web app. It includes:
 
-- Google Fonts (`Orbitron`) for futuristic typography.
-- A full-screen flexbox layout with:
-  - Two vertical text columns (`left` and `right`)
-  - A central cube container
-- JavaScript module linked at the bottom
+- Google Fonts (Orbitron) for a futuristic typographic style.
+- A full-screen flexbox layout comprising:
+  - Two vertical text columns for left and right messages
+  - A central cube container for the 3D scene
+- JavaScript module inclusion via `<script type="module" src="script.js"></script>`
 
-### Key Elements
+**Key Elements:**
 
-| Element ID / Class   | Description |
-|----------------------|-------------|
-| `#cube-container`    | Placeholder for the animated 3D cube |
-| `.text-column.left`  | Left-aligned block of text |
-| `.text-column.right` | Right-aligned block of text |
-| `#left-text`         | Container for left-side messages |
-| `#right-text`        | Container for right-side messages |
-
----
-
-## 🎨 `styles.css`
-
-### Purpose
-Provides styling for layout, responsive behavior, and visual effects like glow and fade.
-
-### Key Features
-
-- **Background**: Vertical gradient (`#000` to `#222`) sets a high-contrast dark theme.
-- **Font**: Futuristic `Orbitron` font for all text.
-- **Layout**: Fixed full-screen `flexbox` to center the cube and text columns.
-- **Responsive Design**: Adjusts cube and text sizes for desktop and mobile via media queries.
-- **Text Styling**: Text blocks have opacity and transform controlled by JavaScript for fade-in effects.
-- **Visual Hierarchy**:
-  - Larger cube on desktop
-  - Mobile-friendly dimensions and touch support
+| Element ID / Class       | Description                                          |
+| ------------------------ | ---------------------------------------------------- |
+| `#cube-container`        | Placeholder div where the animated 3D cube is rendered |
+| `.text-column.left`      | Left-aligned text column                             |
+| `.text-column.right`     | Right-aligned text column                            |
+| `#left-text`             | Container for left-side messages                     |
+| `#right-text`            | Container for right-side messages                    |
 
 ---
 
-## 🧠 `script.js`
+### 🎨 styles.css
 
-### Purpose
-Handles the 3D scene setup, rendering loop, gesture handling, and text transitions using `Three.js` and DOM manipulation.
+**Purpose:**  
+Provides styling for layout, responsive behavior, and visual effects such as glow and fade animations.
 
-### Libraries Used
+**Key Features:**
 
-- **Three.js**: For rendering 3D cube
-- **ES Modules**: Script loaded with `type="module"`
-
----
-
-### Key Components
-
-#### 1. 🔲 **Cube Construction**
-
-- Built with `BoxGeometry`, but rendered as a **wireframe** using `TubeGeometry` for each edge.
-- Two layers:
-  - **Bright core**: Thin, sharp edges
-  - **Glow layer**: Thicker, translucent version slightly scaled up
-
-#### 2. 💡 **Lighting**
-
-- Uses a single ambient light (`#fff`) for uniform brightness.
-
-#### 3. 🧭 **Camera**
-
-- Perspective camera placed at `z = 2` facing the cube.
+- **Background:**  
+  Dark vertical gradient (from `#000` to `#222`) establishes a high-contrast, cyberpunk atmosphere.
+- **Typography:**  
+  The Orbitron font from Google Fonts sets the futuristic tone.
+- **Layout:**  
+  A fixed, full-screen flexbox design centers the cube and text columns.
+- **Responsive Design:**  
+  Media queries adjust cube and text dimensions for desktop and mobile devices.
+- **Text Styling:**  
+  Text blocks use opacity and CSS transforms managed via JavaScript to produce smooth fade-in effects.
 
 ---
 
-#### 4. 🔄 **Text Blocks**
+### 🧠 script.js
 
-- Left and right arrays of messages populate `.text-content` sections.
-- Text elements fade in/out and translate vertically based on cube rotation and scroll state.
-- Text changes are tied to cube faces: e.g., scrolling or swiping up rotates the cube and loads the next message.
+**Purpose:**  
+Manages the 3D scene setup, the animation rendering loop, gesture handling, and text transitions using Three.js and DOM manipulation.
+
+**Libraries Used:**
+
+- **Three.js:**  
+  Renders the 3D cube and manages the WebGL scene.
+- **ES Modules:**  
+  The code leverages JavaScript modules loaded via the `type="module"` attribute.
+
+**Key Components:**
+
+1. **🔲 Cube Construction**
+
+   - **Geometry:**  
+     The cube is constructed with a wireframe style using TubeGeometry for each edge.
+   - **Layers:**  
+     - **Bright Core:** Thin, vivid edges.
+     - **Glow Layer:** A thicker, semi-transparent version slightly scaled up to produce a neon glow effect.
+
+2. **💡 Lighting**
+
+   - Uses a single ambient light (`#fff`) to uniformly illuminate the scene.
+
+3. **🧭 Camera**
+
+   - A perspective camera is positioned at `z = 2`, facing the cube to provide a clear, central view of the animation.
+
+4. **🔄 Text Blocks**
+
+   - **Content:**  
+     Two arrays (left and right) of cyber-inspired messages populate the corresponding text containers.
+   - **Animation:**  
+     Text blocks fade and translate vertically in synchronization with the cube’s rotation. Each vertical flip of the cube updates the displayed text block.
+
+5. **🔁 Animation & Rendering**
+
+   - **Loop:**  
+     The main animation loop uses `requestAnimationFrame(updateScene)` for smooth updates.
+   - **Interpolation:**  
+     Cube rotations are interpolated linearly (using a configurable lerp speed) to ensure smooth, face-to-face transitions.
+   - **Visual Feedback:**  
+     Both the neon wireframe and text elements update every frame for synchronized feedback.
+
+6. **🧭 Face Rotation & Orientation Logic**
+
+   - **Vertical Rotation (X-axis):**  
+     Vertical swipes adjust the cube’s rotation around the X-axis in discrete 90° increments. A `verticalIndex` variable tracks these vertical flips.
+   - **Horizontal Rotation:**  
+     Horizontal swipes apply rotation relative to the cube’s vertical orientation:
+     - When `verticalIndex` is even (cube is “upright” or inverted), horizontal movements update the Y-axis.
+     - When `verticalIndex` is odd (cube is rotated 90°/270° vertically), horizontal movements update the Z-axis.
+   - **Outcome:**  
+     This adaptive control ensures that left/right swipes always result in a consistent, viewer-relative flip without unexpected diagonal rotations.
+
+7. **🧲 Interaction**
+
+   - **Input Methods:**  
+     Supports both mouse wheel (desktop) and touch gestures (mobile).
+   - **Axis Locking:**  
+     Input handlers lock movement to the dominant axis (with additional shift-key handling for forced horizontal gestures).
+   - **Threshold & Sensitivity:**  
+     Configurable constants (e.g., `swipeThreshold`, `touchMult`) determine the amount of gesture required to trigger a rotation.
+
+8. **Notable Constants**
+
+   | Constant         | Purpose                                                  |
+   | ---------------- | -------------------------------------------------------- |
+   | `blocksCount`    | Number of text entries per column                        |
+   | `fadeRange`      | Distance (in pixels) over which text fades               |
+   | `swipeThreshold` | Minimum delta required to trigger a rotation             |
+   | `lerpSpeed`      | Speed factor for rotation interpolation                  |
+   | `touchMult`      | Multiplier to adjust the sensitivity of touch gestures   |
 
 ---
 
-#### 5. 🔁 **Animation & Rendering**
+### 🧪 Future Enhancements
 
-- Main loop runs in `requestAnimationFrame(updateScene)`.
-- Interpolates cube rotation using linear interpolation (lerp).
-- Updates both wireframes and text styling every frame.
-
----
-
-#### 6. 🧭 **Face Rotation Logic**
-
-- Cube has 6 named faces: `A`, `B`, `C`, `D`, `Top`, `Bottom`.
-- Each direction (up/down/left/right) maps to another face.
-- Rotations are predefined per face and animated smoothly.
+- **Additional Interactions:**  
+  Introduce click or tap support for rotating the cube.
+- **Dynamic Text Editing:**  
+  Allow live updates to cube face text via an integrated editor.
+- **Audio Enhancements:**  
+  Add ambient sound effects or background music to enhance the immersive experience.
+- **Extended Reality (XR) Support:**  
+  Adapt the experience for WebXR to support AR/VR environments.
 
 ---
 
-#### 7. 🧲 **Interaction**
+### 📌 Summary
 
-- Handles:
-  - **Mouse Wheel** (desktop)
-  - **Touch gestures** (mobile)
-- Axis-locking logic ensures deliberate direction change.
-- Swipes beyond a threshold trigger cube rotation and update the text index.
-
----
-
-### Notable Constants
-
-| Constant        | Purpose |
-|-----------------|---------|
-| `blocksCount`   | Number of text entries per column |
-| `fadeRange`     | Distance in px for full fade effect |
-| `swipeThreshold`| Minimum gesture delta to trigger rotation |
-| `lerpSpeed`     | Speed of rotation interpolation |
-| `touchMult`     | Sensitivity multiplier for touch gestures |
-
----
-
-## 🧪 Future Enhancements
-
-- Add click/tap support for rotating cube
-- Add live text editor for updating cube face text dynamically
-- Add sound effects or background audio
-- Export to WebXR for AR/VR integration
-
----
-
-## 📌 Summary
-
-This project serves as a stunning visual showcase using WebGL and JavaScript to create an interactive, stylized cube surrounded by synchronized scrolling text. The modular structure allows for easy customization and scaling, whether for branding, portfolio presentation, or artistic expression.
+Neon Cube is a striking visual showcase that leverages WebGL and JavaScript to create an interactive, stylized 3D cube paired with synchronized scrolling text. With its modular structure and adaptive interaction logic—including new orientation-aware horizontal rotation—this project offers both aesthetic appeal and technical flexibility. Whether used for branding, a portfolio, or artistic expression, Neon Cube demonstrates how a careful balance of design and code can produce a futuristic web experience that feels both smooth and immersive.

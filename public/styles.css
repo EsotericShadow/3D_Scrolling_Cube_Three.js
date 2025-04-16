@@ -1,4 +1,4 @@
-/* Disable default touch actions on the entire document */
+/* Disable default touch actions */
 html, body {
   margin: 0;
   padding: 0;
@@ -12,8 +12,10 @@ html, body {
 
 .container {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -24,68 +26,14 @@ html, body {
 #cube-container {
   position: relative;
   z-index: 1;
-  width: 100px;
-  height: 100px;
+  width: 400px;
+  height: 400px;
 }
 
-/* Increase cube-container size for mobile devices */
+/* Increase cube-container size on mobile */
 @media (max-width: 768px) {
   #cube-container {
-    width: 150px;
-    height: 150px;
-  }
-}
-
-.text-column {
-  position: relative;
-  width: 30%;
-  height: 100%;
-  color: #fff;
-}
-
-.text-content {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-  will-change: transform;
-}
-
-.text-inner {
-  margin: 0;
-}
-
-.text-block {
-  /* Driven opacity + transform via JS */
-  opacity: 0;
-  transform: translateY(20px);
-  will-change: opacity, transform;
-}
-
-.text-content p {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  text-shadow: 0 0 3px #fff;
-}
-
-@media (min-width: 769px) {
-  #cube-container {
-    width: 400px;
-    height: 400px;
-  }
-  .text-column {
-    width: 360px;
-  }
-  .text-content {
-    padding: 20px;
-  }
-  .text-content p {
-    font-size: 16px;
-    text-shadow: 0 0 5px #fff;
-  }
-  .text-block {
-    margin-bottom: 240px;
+    width: 250px;
+    height: 250px;
   }
 }

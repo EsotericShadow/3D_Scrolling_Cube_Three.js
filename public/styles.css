@@ -46,13 +46,11 @@ html, body {
 }
 
 .text-block {
-  /* we’re driving opacity + transform entirely in JS now */
+  /* Driven opacity + transform via JS */
   opacity: 0;
   transform: translateY(20px);
-  /* remove any transition here */
   will-change: opacity, transform;
 }
-
 
 .text-content p {
   margin: 0;

@@ -89,6 +89,63 @@ document.addEventListener('DOMContentLoaded', () => {
   scene.add(wireframe);
   scene.add(glowWireframe);
 
+  // --- CONTENT FOR EACH FACE ---
+  const faceContents = [
+    { header: "Home", description: "Welcome to Evergreen Web Solutions.", cta: "https://evergreenwebsolutions.ca" },
+    { header: "Services", description: "Explore our range of services.", cta: "https://evergreenwebsolutions.ca/Services" },
+    { header: "Web Design", description: "Learn about our web design offerings.", cta: "https://evergreenwebsolutions.ca/web-design" },
+    { header: "App Development", description: "Discover our app development services.", cta: "https://evergreenwebsolutions.ca/App-Development" },
+    { header: "AI Automation", description: "Explore AI automation solutions.", cta: "https://evergreenwebsolutions.ca/AI-Automation" },
+    { header: "Business Digitization", description: "Digitize your business with us.", cta: "https://evergreenwebsolutions.ca/Business-Digitization" }
+  ];
+
+  const faceNormals = [
+    new THREE.Vector3(1, 0, 0),  // right
+    new THREE.Vector3(-1, 0, 0), // left
+    new THREE.Vector3(0, 1, 0),  // top
+    new THREE.Vector3(0, -1, 0), // bottom
+    new THREE.Vector3(0, 0, 1),  // front
+    new THREE.Vector3(0, 0, -1)  // back
+  ];
+
+  let currentFrontFace = 0;
+
+  function getFrontFace() {
+    const viewDir = new THREE.Vector3(0, 0, -1);
+    let maxDot = -1;
+    let frontFaceIndex = 0;
+    faceNormals.forEach((normal, index) => {
+      const transformedNormal = normal.clone().applyQuaternion(cube.quaternion);
+      const dot = transformedNormal.dot(viewDir);
+      if (dot > maxDot) {
+        maxDot = dot;
+        frontFaceIndex = index;
+      }
+    });
+    return frontFaceIndex;
+  }
+
+  function updateContent(index) {
+    const header = document.getElementById('header');
+    const description = document.getElementById('description');
+    const cta = document.getElementById('cta');
+
+    header.classList.remove('active');
+    description.classList.remove('active');
+    cta.classList.remove('active');
+
+    setTimeout(() => {
+      header.textContent = faceContents[index].header;
+      description.textContent = faceContents[index].description;
+      cta.href = faceContents[index].cta;
+      cta.textContent = "Learn More";
+
+      header.classList.add('active');
+      description.classList.add('active');
+      cta.classList.add('active');
+    }, 150); // Delay to sync with fade-out
+  }
+
   // --- ROTATION STATE ---
   let verticalIndex = 0;
   let horizontalIndexY = 0;
@@ -129,6 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isAnimating) {
       accumulatedDeltaX = 0;
       accumulatedDeltaY = 0;
+    } else {
+      const newFrontFace = getFrontFace();
+      if (newFrontFace !== currentFrontFace) {
+        currentFrontFace = newFrontFace;
+        updateContent(newFrontFace);
+      }
     }
 
     cube.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
@@ -150,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
       targetRotX = -90 * verticalIndex;
     } else if (direction === 'left') {
       if (verticalIndex % 2 === 0) {
-        horizontalIndexY++; // Invert for correct left swipe
+        horizontalIndexY++;
         targetRotY = 90 * horizontalIndexY;
       } else {
         horizontalIndexZ--;
@@ -158,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else if (direction === 'right') {
       if (verticalIndex % 2 === 0) {
-        horizontalIndexY--; // Invert for correct right swipe
+        horizontalIndexY--;
         targetRotY = 90 * horizontalIndexY;
       } else {
         horizontalIndexZ++;
@@ -287,5 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
     camera.updateProjectionMatrix();
   });
 
+  // Initialize content
+  updateContent(currentFrontFace);
   requestAnimationFrame(updateScene);
 });

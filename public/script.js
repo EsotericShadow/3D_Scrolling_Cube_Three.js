@@ -41,7 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     "https://evergreenwebsolutions.ca/Business-Digitization"
   ];
 
-  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const cubeGeometry = new THREE.BoxGeometry(
+  isMobile ? 1.5 : 1, // Increase width on mobile/tablet
+  isMobile ? 1.5 : 1, // Increase height on mobile/tablet
+  isMobile ? 1.5 : 1  // Increase depth on mobile/tablet
+);
   const cubeMaterials = Array(6).fill(videoMaterial);
   const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
   scene.add(cube);

@@ -3,27 +3,53 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.m
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
-  // --- Device Detection ---
   const isMobile = window.matchMedia('(max-width: 768px)').matches || ('ontouchstart' in window);
 
-  // --- THREE.JS SETUP ---
   const scene = new THREE.Scene();
   const cubeContainer = document.getElementById('cube-container');
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    cubeContainer.clientWidth / cubeContainer.clientHeight,
-    0.1,
-    1000
-  );
+  const camera = new THREE.PerspectiveCamera(75, cubeContainer.clientWidth / cubeContainer.clientHeight, 0.1, 1000);
   camera.position.z = 2;
-  
+
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
   cubeContainer.appendChild(renderer.domElement);
   scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-  // --- Cube Wireframe Setup ---
+  // --- VIDEO TEXTURE SETUP ---
+  const video = document.createElement('video');
+  video.src = 'cube_texture.mp4';
+  video.loop = true;
+  video.muted = true;
+  video.playsInline = true;
+  video.autoplay = true;
+  video.play();
+
+  const videoTexture = new THREE.VideoTexture(video);
+  videoTexture.minFilter = THREE.LinearFilter;
+  videoTexture.magFilter = THREE.LinearFilter;
+  videoTexture.format = THREE.RGBAFormat;
+
+  const videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
+
+  const faceLinks = [
+    "https://evergreenwebsolutions.ca",
+    "https://evergreenwebsolutions.ca/Services",
+    "https://evergreenwebsolutions.ca/web-design",
+    "https://evergreenwebsolutions.ca/App-Development",
+    "https://evergreenwebsolutions.ca/AI-Automation",
+    "https://evergreenwebsolutions.ca/Business-Digitization"
+  ];
+
+  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const cubeMaterials = Array(6).fill(videoMaterial);
+  const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
+  scene.add(cube);
+
+  // --- WIRE + GLOW ---
+  const neonColor = new THREE.Color('hsl(200, 100%, 60%)');
+  const brightMat = new THREE.MeshBasicMaterial({ color: neonColor });
+
   const edgePositions = [
     [[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5]],
     [[-0.5,  0.5, -0.5], [0.5,  0.5, -0.5]],
@@ -38,23 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
     [[-0.5,  0.5, -0.5], [-0.5,  0.5,  0.5]],
     [[ 0.5,  0.5, -0.5], [ 0.5,  0.5,  0.5]]
   ];
-  
-  // Basic neon color setup
-  const neonColor = new THREE.Color('hsl(200, 100%, 60%)');
-  const brightMat = new THREE.MeshBasicMaterial({ color: neonColor });
-  
+
   const wireframe = new THREE.Group();
   edgePositions.forEach(([start, end]) => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
     const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false);
     wireframe.add(new THREE.Mesh(tubeGeometry, brightMat));
   });
-  
-  const glowMat = new THREE.MeshBasicMaterial({ 
-    color: neonColor,
-    transparent: true,
-    opacity: 0.4 
-  });
+
+  const glowMat = new THREE.MeshBasicMaterial({ color: neonColor, transparent: true, opacity: 0.4 });
   const glowWireframe = new THREE.Group();
   edgePositions.forEach(([start, end]) => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
@@ -62,33 +80,24 @@ document.addEventListener('DOMContentLoaded', () => {
     glowWireframe.add(new THREE.Mesh(tubeGeometry, glowMat));
   });
   glowWireframe.scale.set(1.1, 1.1, 1.1);
-  
-  scene.add(glowWireframe);
   scene.add(wireframe);
+  scene.add(glowWireframe);
 
-  // --- Rotation State Variables ---
+  // --- ROTATION STATE ---
   let verticalIndex = 0;
   let horizontalIndexY = 0;
   let horizontalIndexZ = 0;
-  
-  // Current rotations (in degrees)
+
   let currentRotX = 0, currentRotY = 0, currentRotZ = 0;
-  // Target rotations (in degrees)
   let targetRotX = 0, targetRotY = 0, targetRotZ = 0;
-  
   let isAnimating = false;
-  const lerpSpeed = 0.1;  
-  const swipeThreshold = 75;
-  let accumulatedDeltaX = 0;
-  let accumulatedDeltaY = 0;
-  let lockedAxis = null;
-  const touchMult = 2;
-  const deadZone = 10; // Minimal movement before locking axis
-  
-  // Convert degrees to radians
+
   const toRad = deg => deg * Math.PI / 180;
-  
-  // --- RENDER LOOP ---
+  const lerpSpeed = 0.1;
+  const swipeThreshold = 75;
+  const touchMult = 2;
+  const deadZone = 10;
+
   function updateScene() {
     let animating = false;
     if (Math.abs(currentRotX - targetRotX) > 0.1) {
@@ -109,27 +118,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       currentRotZ = targetRotZ;
     }
+
     isAnimating = animating;
     if (isAnimating) {
       accumulatedDeltaX = 0;
       accumulatedDeltaY = 0;
     }
-  
-    // Apply rotations
-    glowWireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
+
+    cube.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
     wireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
-  
+    glowWireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
+
     renderer.render(scene, camera);
     requestAnimationFrame(updateScene);
   }
-  
-  // --- FACE CHANGE (Swipe Handler) ---
-  // Vertical swipes rotate about the X-axis.
-  // Horizontal swipes use Y rotation if the cube is upright (even verticalIndex)
-  // or Z rotation when rotated vertically (odd verticalIndex).
+
   function changeFace(direction) {
     if (isAnimating) return;
-  
+
     if (direction === 'up') {
       verticalIndex++;
       targetRotX = -90 * verticalIndex;
@@ -137,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       verticalIndex--;
       targetRotX = -90 * verticalIndex;
     } else if (direction === 'left') {
-      if (verticalIndex % 2 === 0) { 
+      if (verticalIndex % 2 === 0) {
         horizontalIndexY--;
         targetRotY = 90 * horizontalIndexY;
       } else {
@@ -153,19 +159,23 @@ document.addEventListener('DOMContentLoaded', () => {
         targetRotZ = 90 * horizontalIndexZ;
       }
     }
+
     accumulatedDeltaX = 0;
     accumulatedDeltaY = 0;
     lockedAxis = null;
     isAnimating = true;
   }
-  
-  // --- INPUT HANDLERS ---
+
+  let accumulatedDeltaX = 0;
+  let accumulatedDeltaY = 0;
+  let lockedAxis = null;
+
   function onWheel(e) {
     if (isAnimating) return;
     e.preventDefault();
     const deltaX = e.deltaX || 0;
     const deltaY = e.deltaY || 0;
-  
+
     if (e.shiftKey) {
       accumulatedDeltaX += deltaX;
       accumulatedDeltaY = 0;
@@ -178,15 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
         accumulatedDeltaY = 0;
       }
     }
-  
+
     if (Math.abs(accumulatedDeltaX) > swipeThreshold) {
       changeFace(accumulatedDeltaX > 0 ? 'right' : 'left');
     } else if (Math.abs(accumulatedDeltaY) > swipeThreshold) {
       changeFace(accumulatedDeltaY > 0 ? 'up' : 'down');
     }
   }
-  
+
   let lastX = 0, lastY = 0;
+
   function onTouchStart(e) {
     lastX = e.touches[0].clientX;
     lastY = e.touches[0].clientY;
@@ -194,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     accumulatedDeltaX = 0;
     accumulatedDeltaY = 0;
   }
-  
+
   function onTouchMove(e) {
     if (isAnimating) return;
     e.preventDefault();
@@ -202,12 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentY = e.touches[0].clientY;
     const deltaX = lastX - currentX;
     const deltaY = lastY - currentY;
-  
-    // Only decide on an axis after a minimal "dead zone" has passed.
+
     if (!lockedAxis && (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone)) {
       lockedAxis = Math.abs(deltaX) >= Math.abs(deltaY) ? 'x' : 'y';
     }
-  
+
     if (lockedAxis === 'x') {
       accumulatedDeltaX += deltaX * touchMult;
       accumulatedDeltaY = 0;
@@ -215,23 +225,23 @@ document.addEventListener('DOMContentLoaded', () => {
       accumulatedDeltaY += deltaY * touchMult;
       accumulatedDeltaX = 0;
     }
-  
+
     if (Math.abs(accumulatedDeltaX) > swipeThreshold) {
       changeFace(accumulatedDeltaX > 0 ? 'right' : 'left');
     } else if (Math.abs(accumulatedDeltaY) > swipeThreshold) {
       changeFace(accumulatedDeltaY > 0 ? 'up' : 'down');
     }
-  
+
     lastX = currentX;
     lastY = currentY;
   }
-  
+
   function onTouchEnd() {
     lockedAxis = null;
     accumulatedDeltaX = 0;
     accumulatedDeltaY = 0;
   }
-  
+
   if (!isMobile) {
     window.addEventListener('wheel', onWheel, { passive: false });
   } else {
@@ -239,8 +249,23 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onTouchEnd, { passive: false });
   }
-  
-  // --- RESIZE HANDLER ---
+
+  // --- CLICK HANDLER FOR CUBE ---
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+
+  cubeContainer.addEventListener('click', event => {
+    mouse.x = (event.clientX / cubeContainer.clientWidth) * 2 - 1;
+    mouse.y = -(event.clientY / cubeContainer.clientHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObject(cube);
+    if (intersects.length > 0) {
+      const faceIndex = Math.floor(intersects[0].faceIndex / 2);
+      window.open(faceLinks[faceIndex], '_blank');
+    }
+  });
+
   window.addEventListener('resize', () => {
     const w = cubeContainer.clientWidth;
     const h = cubeContainer.clientHeight;
@@ -248,7 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   });
-  
-  // --- START ANIMATION ---
+
   requestAnimationFrame(updateScene);
 });

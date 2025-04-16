@@ -150,18 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
       targetRotX = -90 * verticalIndex;
     } else if (direction === 'left') {
       if (verticalIndex % 2 === 0) {
-        horizontalIndexY++; // Invert for correct left swipe
+        horizontalIndexY++; // Normal direction for even verticalIndex
         targetRotY = 90 * horizontalIndexY;
       } else {
-        horizontalIndexZ--;
+        horizontalIndexZ++; // Flip direction for odd verticalIndex
         targetRotZ = 90 * horizontalIndexZ;
       }
     } else if (direction === 'right') {
       if (verticalIndex % 2 === 0) {
-        horizontalIndexY--; // Invert for correct right swipe
+        horizontalIndexY--; // Normal direction for even verticalIndex
         targetRotY = 90 * horizontalIndexY;
       } else {
-        horizontalIndexZ++;
+        horizontalIndexZ--; // Flip direction for odd verticalIndex
         targetRotZ = 90 * horizontalIndexZ;
       }
     }

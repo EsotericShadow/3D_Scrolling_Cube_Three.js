@@ -1,3 +1,5 @@
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
@@ -114,21 +116,57 @@ document.addEventListener('DOMContentLoaded', () => {
     return wrapper;
   }
 
+  // Initialize textBlocks globally
+  let textBlocks = [];
+
   // — STATE & CONFIG —
   let blockHeight = 0;
   const blocksCount = leftMessages.length;
   let contentHeight = 0;
-  let rotationFactor = 0;
-  let virtualScrollY = 0; // Vertical scroll
-  let virtualScrollX = 0; // Horizontal scroll
-  let textBlocks = [];
+  let centerOffset = 0;
   const fadeRange = 150;
   const translateMax = 20;
   const touchMult = 2;
-  let centerOffset = 0;
+
+  // Cube face state
+  let currentFace = 'A'; // Start with Face A
+  let targetRotX = 0; // Target rotation X (radians)
+  let targetRotY = 0; // Target rotation Y (radians)
+  let currentRotX = 0; // Current rotation X (radians)
+  let currentRotY = 0; // Current rotation Y (radians)
+  let textIndex = 0; // Current text block index
+  let isAnimating = false; // Lock inputs during animation
+  const swipeThreshold = 75; // Pixels to trigger face change
+  let accumulatedDeltaX = 0; // Accumulated horizontal swipe
+  let accumulatedDeltaY = 0; // Accumulated vertical swipe
+  let lockedAxis = null; // Lock to 'x' or 'y' per touch gesture
+  const lerpSpeed = 0.3; // Animation speed
 
   const easeInOutQuad = x =>
     x < 0.5 ? 2 * x * x : 1 - ((-2 * x + 2) ** 2) / 2;
+
+  // Face transition map
+  const faceTransitions = {
+    'A': { up: 'Bottom', down: 'Top', left: 'D', right: 'B' },
+    'Bottom': { up: 'C', down: 'A', left: 'D', right: 'B' },
+    'Top': { up: 'A', down: 'C', left: 'D', right: 'B' },
+    'B': { up: 'Bottom', down: 'Top', left: 'A', right: 'C' },
+    'C': { up: 'Bottom', down: 'Top', left: 'B', right: 'D' },
+    'D': { up: 'Bottom', down: 'Top', left: 'C', right: 'A' }
+  };
+
+  // Face rotation map (in degrees, converted to radians)
+  const faceRotations = {
+    'A': { x: 0, y: 0 },
+    'B': { x: 0, y: 90 },
+    'C': { x: 0, y: 180 },
+    'D': { x: 0, y: -90 },
+    'Top': { x: 90, y: 0 },
+    'Bottom': { x: -90, y: 0 }
+  };
+
+  // Convert degrees to radians
+  const toRadians = deg => deg * Math.PI / 180;
 
   // — INITIALIZE TEXT + METRICS —
   function setup() {
@@ -136,44 +174,55 @@ document.addEventListener('DOMContentLoaded', () => {
     rightMessages.forEach(m => rightText.appendChild(createTextBlock(m)));
     textBlocks = Array.from(document.querySelectorAll('.text-block'));
 
-    requestAnimationFrame(() => {
-      const first = textBlocks[0];
-      const rect = first.getBoundingClientRect();
-      const style = window.getComputedStyle(first);
-      const mb = parseFloat(style.marginBottom);
+    const first = textBlocks[0];
+    const rect = first.getBoundingClientRect();
+    const style = window.getComputedStyle(first);
+    const mb = parseFloat(style.marginBottom);
 
-      blockHeight = rect.height + mb;
-      contentHeight = blockHeight * blocksCount;
-      rotationFactor = Math.PI / blockHeight;
-      centerOffset = (window.innerHeight / 2) - (rect.height / 2);
+    blockHeight = rect.height + mb;
+    contentHeight = blockHeight * blocksCount;
+    centerOffset = (window.innerHeight / 2) - (rect.height / 2);
 
-      updateScene();
-    });
+    requestAnimationFrame(updateScene);
   }
 
   // — RENDER & FADE LOOP —
   function updateScene() {
-    // Rotate wireframes: vertical scroll rotates around X-axis, horizontal around Y-axis
-    glowWireframe.rotation.x = -virtualScrollY * rotationFactor;
-    wireframe.rotation.x = -virtualScrollY * rotationFactor;
-    glowWireframe.rotation.y = -virtualScrollX * rotationFactor;
-    wireframe.rotation.y = -virtualScrollX * rotationFactor;
+    // Lerp rotations to target
+    if (Math.abs(currentRotX - targetRotX) > 0.001 || Math.abs(currentRotY - targetRotY) > 0.001) {
+      currentRotX += (targetRotX - currentRotX) * lerpSpeed;
+      currentRotY += (targetRotY - currentRotY) * lerpSpeed;
+      isAnimating = true;
+      // Reset deltas during animation
+      accumulatedDeltaX = 0;
+      accumulatedDeltaY = 0;
+    } else {
+      currentRotX = targetRotX;
+      currentRotY = targetRotY;
+      isAnimating = false;
+    }
 
-    // Hue shift
-    const hue = ((virtualScrollY + virtualScrollX) * 0.1) % 360;
+    // Apply rotations
+    glowWireframe.rotation.x = currentRotX;
+    wireframe.rotation.x = currentRotX;
+    glowWireframe.rotation.y = currentRotY;
+    wireframe.rotation.y = currentRotY;
+
+    // Hue shift based on face index
+    const hue = (textIndex * 36) % 360;
     const h = (hue + 360) % 360 / 360;
     brightMat.color.setHSL(h, 1, 0.6);
     glowMat.color.setHSL(h, 1, 0.6);
 
-    // Text scroll (only vertical)
-    const r = ((virtualScrollY % contentHeight) + contentHeight) % contentHeight;
+    // Text scroll (tied to vertical face changes)
+    const r = (textIndex * blockHeight) % contentHeight;
     const offset = centerOffset - r;
     leftText.style.transform = `translateY(${offset}px)`;
     rightText.style.transform = `translateY(${offset}px)`;
 
     // Text fade
     const midY = window.innerHeight / 2;
-    textBlocks.forEach(block => {
+    textBlocks.forEach((block, index) => {
       const bRect = block.getBoundingClientRect();
       const bCenter = bRect.top + bRect.height / 2;
       const dist = Math.abs(bCenter - midY);
@@ -185,50 +234,108 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     renderer.render(scene, camera);
+    requestAnimationFrame(updateScene);
+  }
+
+  // — CHANGE FACE —
+  function changeFace(direction) {
+    if (isAnimating) return;
+    const newFace = faceTransitions[currentFace][direction];
+    if (!newFace) return;
+
+    // Update face and rotations
+    currentFace = newFace;
+    targetRotX = toRadians(faceRotations[newFace].x);
+    targetRotY = toRadians(faceRotations[newFace].y);
+
+    // Update text index for vertical changes
+    if (direction === 'up' || direction === 'down') {
+      textIndex = (textIndex + (direction === 'up' ? 1 : -1) + blocksCount) % blocksCount;
+    }
+
+    // Reset accumulators and lock
+    accumulatedDeltaX = 0;
+    accumulatedDeltaY = 0;
+    isAnimating = true;
   }
 
   // — INPUT HANDLERS —
   function onWheel(e) {
+    if (isAnimating) return;
     e.preventDefault();
-    // Trackpad or mouse wheel: prioritize the dominant axis
     const deltaX = e.deltaX || 0;
     const deltaY = e.deltaY || 0;
-    const threshold = 2; // Minimum movement to register
+    const threshold = 3; // Lowered for responsiveness
+    const dominanceFactor = 2; // Stricter axis selection
 
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
-      // Horizontal scroll (trackpad two-finger left/right or Shift + Wheel)
-      virtualScrollX += deltaX * (e.shiftKey ? 2 : 1); // Amplify if Shift is held
+    // Strict axis locking: choose one axis and reset the other
+    if (Math.abs(deltaX) > Math.abs(deltaY) * dominanceFactor && Math.abs(deltaX) > threshold) {
+      accumulatedDeltaX += deltaX * (e.shiftKey ? 2 : 1);
+      accumulatedDeltaY = 0; // Reset non-dominant axis
     } else if (Math.abs(deltaY) > threshold) {
-      // Vertical scroll
-      virtualScrollY += deltaY;
+      accumulatedDeltaY += deltaY;
+      accumulatedDeltaX = 0; // Reset non-dominant axis
     }
 
-    updateScene();
+    // Check thresholds
+    if (Math.abs(accumulatedDeltaX) > swipeThreshold) {
+      changeFace(accumulatedDeltaX > 0 ? 'right' : 'left');
+    } else if (Math.abs(accumulatedDeltaY) > swipeThreshold) {
+      changeFace(accumulatedDeltaY > 0 ? 'up' : 'down');
+    }
   }
 
   function onTouchStart(e) {
     lastY = e.touches[0].clientY;
     lastX = e.touches[0].clientX;
+    lockedAxis = null;
+    accumulatedDeltaX = 0;
+    accumulatedDeltaY = 0;
   }
 
   function onTouchMove(e) {
-    e.preventDefault(); // Prevent default scrolling
+    if (isAnimating) return;
+    e.preventDefault();
     const y = e.touches[0].clientY;
     const x = e.touches[0].clientX;
     const deltaY = (lastY - y) * touchMult;
     const deltaX = (lastX - x) * touchMult;
-    const threshold = 5; // Minimum movement to register
+    const threshold = 3; // Lowered for responsiveness
+    const dominanceFactor = 2;
 
-    // Lock to dominant axis
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
-      virtualScrollX += deltaX;
-    } else if (Math.abs(deltaY) > threshold) {
-      virtualScrollY += deltaY;
+    // Lock to dominant axis at start of gesture
+    if (!lockedAxis) {
+      if (Math.abs(deltaX) > Math.abs(deltaY) * dominanceFactor && Math.abs(deltaX) > threshold) {
+        lockedAxis = 'x';
+      } else if (Math.abs(deltaY) > threshold) {
+        lockedAxis = 'y';
+      }
+    }
+
+    // Accumulate only for locked axis
+    if (lockedAxis === 'x') {
+      accumulatedDeltaX += deltaX;
+      accumulatedDeltaY = 0; // Reset non-dominant axis
+    } else if (lockedAxis === 'y') {
+      accumulatedDeltaY += deltaY;
+      accumulatedDeltaX = 0; // Reset non-dominant axis
+    }
+
+    // Check thresholds
+    if (Math.abs(accumulatedDeltaX) > swipeThreshold) {
+      changeFace(accumulatedDeltaX > 0 ? 'right' : 'left');
+    } else if (Math.abs(accumulatedDeltaY) > swipeThreshold) {
+      changeFace(accumulatedDeltaY > 0 ? 'up' : 'down');
     }
 
     lastY = y;
     lastX = x;
-    updateScene();
+  }
+
+  function onTouchEnd(e) {
+    lockedAxis = null;
+    accumulatedDeltaX = 0;
+    accumulatedDeltaY = 0;
   }
 
   if (!isMobile) {
@@ -238,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastX = 0;
     window.addEventListener('touchstart', onTouchStart, { passive: false });
     window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: false });
   }
 
   // — HANDLE RESIZE —
@@ -248,17 +356,16 @@ document.addEventListener('DOMContentLoaded', () => {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
 
-    const first = textBlocks[0];
-    const rect = first.getBoundingClientRect();
-    const style = window.getComputedStyle(first);
-    const mb = parseFloat(style.marginBottom);
+    if (textBlocks.length > 0) {
+      const first = textBlocks[0];
+      const rect = first.getBoundingClientRect();
+      const style = window.getComputedStyle(first);
+      const mb = parseFloat(style.marginBottom);
 
-    blockHeight = rect.height + mb;
-    contentHeight = blockHeight * blocksCount;
-    rotationFactor = Math.PI / blockHeight;
-    centerOffset = (window.innerHeight / 2) - (rect.height / 2);
-
-    updateScene();
+      blockHeight = rect.height + mb;
+      contentHeight = blockHeight * blocksCount;
+      centerOffset = (window.innerHeight / 2) - (rect.height / 2);
+    }
   });
 
   // — BOOTSTRAP —

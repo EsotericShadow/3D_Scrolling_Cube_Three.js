@@ -1,4 +1,3 @@
-// script.js
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
@@ -24,25 +23,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
   scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-  // — HOLLOW NEON CUBE —  
+  // — HOLLOW NEON CUBE —
   const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const edges = new THREE.EdgesGeometry(geometry);
 
-  // Bright core wireframe
-  const brightMat = new THREE.LineBasicMaterial({
-    color: new THREE.Color('hsl(200, 100%, 60%)'),
+  // Define the 12 edges of the cube (start and end points)
+  const edgePositions = [
+    [[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5]], // Bottom edges
+    [[-0.5, 0.5, -0.5], [0.5, 0.5, -0.5]],
+    [[-0.5, -0.5, 0.5], [0.5, -0.5, 0.5]],
+    [[-0.5, 0.5, 0.5], [0.5, 0.5, 0.5]],
+    [[-0.5, -0.5, -0.5], [-0.5, 0.5, -0.5]], // Vertical edges
+    [[0.5, -0.5, -0.5], [0.5, 0.5, -0.5]],
+    [[-0.5, -0.5, 0.5], [-0.5, 0.5, 0.5]],
+    [[0.5, -0.5, 0.5], [0.5, 0.5, 0.5]],
+    [[-0.5, -0.5, -0.5], [-0.5, -0.5, 0.5]], // Front-back edges
+    [[0.5, -0.5, -0.5], [0.5, -0.5, 0.5]],
+    [[-0.5, 0.5, -0.5], [-0.5, 0.5, 0.5]],
+    [[0.5, 0.5, -0.5], [0.5, 0.5, 0.5]]
+  ];
+
+  // Bright core wireframe (using tubes)
+  const brightMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color('hsl(200, 100%, 60%)')
   });
-  const wireframe = new THREE.LineSegments(edges, brightMat);
+  const wireframe = new THREE.Group();
 
-  // Faint, slightly scaled wireframe for glow
-  const glowMat = new THREE.LineBasicMaterial({
+  edgePositions.forEach(([start, end]) => {
+    const path = new THREE.LineCurve3(
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...end)
+    );
+    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false); // radius: 0.02 for core
+    wireframe.add(new THREE.Mesh(tubeGeometry, brightMat));
+  });
+
+  // Faint, slightly scaled wireframe for glow (thicker tubes)
+  const glowMat = new THREE.MeshBasicMaterial({
     color: new THREE.Color('hsl(200, 100%, 60%)'),
     transparent: true,
-    opacity: 0.4,
+    opacity: 0.4
   });
-  const glowWireframe = new THREE.LineSegments(edges, glowMat);
-  glowWireframe.scale.set(1.1, 1.1, 1.1);
+  const glowWireframe = new THREE.Group();
 
+  edgePositions.forEach(([start, end]) => {
+    const path = new THREE.LineCurve3(
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...end)
+    );
+    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false); // radius: 0.03 for glow
+    glowWireframe.add(new THREE.Mesh(tubeGeometry, glowMat));
+  });
+
+  glowWireframe.scale.set(1.1, 1.1, 1.1);
   scene.add(glowWireframe);
   scene.add(wireframe);
 

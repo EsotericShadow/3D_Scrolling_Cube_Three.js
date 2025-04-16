@@ -128,11 +128,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let swipeRotation;
     if (direction === 'up' || direction === 'down') {
       swipeRotation = swipeRotations[direction];
-      verticalSwipeOccurred = true;
+      verticalSwipeOccurred = !verticalSwipeOccurred; // Toggle the state
     } else if (direction === 'left' || direction === 'right') {
-      // Determine axis based on whether a vertical swipe has occurred
-      const axis = verticalSwipeOccurred ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0); // Z or Y
-      const angle = direction === 'left' ? Math.PI / 2 : -Math.PI / 2;
+      // Determine axis for flipping: X (initial) or Z (after vertical swipe)
+      const axis = verticalSwipeOccurred ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0); // Z or X
+      // Flip by 180°: left and right swipes produce same mirror effect, but ensure consistent direction
+      const angle = (direction === 'left' || direction === 'right') ? Math.PI : -Math.PI;
       swipeRotation = new THREE.Quaternion().setFromAxisAngle(axis, angle);
     }
 

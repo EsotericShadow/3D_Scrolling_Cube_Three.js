@@ -39,7 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
     [[ 0.5,  0.5, -0.5], [ 0.5,  0.5,  0.5]]
   ];
   
-  const brightMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('hsl(200, 100%, 60%)') });
+  // Basic neon color setup
+  const neonColor = new THREE.Color('hsl(200, 100%, 60%)');
+  const brightMat = new THREE.MeshBasicMaterial({ color: neonColor });
+  
   const wireframe = new THREE.Group();
   edgePositions.forEach(([start, end]) => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
@@ -48,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   const glowMat = new THREE.MeshBasicMaterial({ 
-    color: new THREE.Color('hsl(200, 100%, 60%)'),
+    color: neonColor,
     transparent: true,
     opacity: 0.4 
   });
@@ -59,56 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
     glowWireframe.add(new THREE.Mesh(tubeGeometry, glowMat));
   });
   glowWireframe.scale.set(1.1, 1.1, 1.1);
+  
   scene.add(glowWireframe);
   scene.add(wireframe);
 
-  // --- Text Setup ---
-  const leftText = document.getElementById('left-text');
-  const rightText = document.getElementById('right-text');
-  const leftMessages = [
-    'Designs that defy convention.',
-    'Minimalist. Modular. Mind‑blowing.',
-    'Web experiences with a pulse.',
-    'A new dimension of interactivity.',
-    'Explore the edge of digital design.',
-    'Your brand in real time.',
-    'Precision meets emotion.',
-    "Design that's alive.",
-    'Technically beautiful.',
-    'Inspired by the future.'
-  ];
-  const rightMessages = [
-    'Enter a hyper‑immersive world.',
-    'Innovation meets aesthetics.',
-    '3D is just the beginning.',
-    'Crafted for high‑speed minds.',
-    'From code to consciousness.',
-    'Made for visionaries.',
-    'Where tech meets art.',
-    'Interactive identity design.',
-    'Design beyond the screen.',
-    'Step into another layer.'
-  ];
-  
-  function createTextBlock(msg) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'text-inner';
-    wrapper.innerHTML = `<div class="text-block"><p>${msg}</p></div>`;
-    return wrapper;
-  }
-  
-  let textBlocks = [];
-  let blockHeight = 0;
-  const blocksCount = leftMessages.length;
-  let contentHeight = 0;
-  let centerOffset = 0;
-  const fadeRange = 150;
-  const translateMax = 20;
-  
   // --- Rotation State Variables ---
-  // verticalIndex tracks vertical face flips (in 90° increments)
-  // When verticalIndex is even, horizontal swipes rotate around Y.
-  // When odd, they rotate around Z.
   let verticalIndex = 0;
   let horizontalIndexY = 0;
   let horizontalIndexZ = 0;
@@ -118,36 +76,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Target rotations (in degrees)
   let targetRotX = 0, targetRotY = 0, targetRotZ = 0;
   
-  let textIndex = 0;
   let isAnimating = false;
-  const lerpSpeed = 0.1;  // lower value for smooth linear transitions
+  const lerpSpeed = 0.1;  
   const swipeThreshold = 75;
   let accumulatedDeltaX = 0;
   let accumulatedDeltaY = 0;
   let lockedAxis = null;
   const touchMult = 2;
+  const deadZone = 10; // Minimal movement before locking axis
   
   // Convert degrees to radians
   const toRad = deg => deg * Math.PI / 180;
   
-  // --- INITIALIZE TEXT & METRICS ---
-  function setup() {
-    leftMessages.forEach(m => leftText.appendChild(createTextBlock(m)));
-    rightMessages.forEach(m => rightText.appendChild(createTextBlock(m)));
-    textBlocks = Array.from(document.querySelectorAll('.text-block'));
-    const first = textBlocks[0];
-    const rect = first.getBoundingClientRect();
-    const style = window.getComputedStyle(first);
-    const mb = parseFloat(style.marginBottom);
-    blockHeight = rect.height + mb;
-    contentHeight = blockHeight * blocksCount;
-    centerOffset = (window.innerHeight / 2) - (rect.height / 2);
-    requestAnimationFrame(updateScene);
-  }
-  
-  // --- RENDER & FADE LOOP ---
+  // --- RENDER LOOP ---
   function updateScene() {
-    // Lerp current rotations toward target rotations.
     let animating = false;
     if (Math.abs(currentRotX - targetRotX) > 0.1) {
       currentRotX += (targetRotX - currentRotX) * lerpSpeed;
@@ -173,62 +115,32 @@ document.addEventListener('DOMContentLoaded', () => {
       accumulatedDeltaY = 0;
     }
   
-    // Apply rotations to the cube
+    // Apply rotations
     glowWireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
     wireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
-  
-    // Update hue based on vertical text index.
-    const hue = (textIndex * 36) % 360;
-    const h = ((hue + 360) % 360) / 360;
-    brightMat.color.setHSL(h, 1, 0.6);
-    glowMat.color.setHSL(h, 1, 0.6);
-  
-    // Update text scroll
-    const r = (textIndex * blockHeight) % contentHeight;
-    const offset = centerOffset - r;
-    leftText.style.transform = `translateY(${offset}px)`;
-    rightText.style.transform = `translateY(${offset}px)`;
-  
-    // Update text fade effect.
-    const midY = window.innerHeight / 2;
-    textBlocks.forEach(block => {
-      const bRect = block.getBoundingClientRect();
-      const bCenter = bRect.top + bRect.height / 2;
-      const dist = Math.abs(bCenter - midY);
-      const t = Math.min(dist / fadeRange, 1);
-      const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
-      const opacity = 1 - eased;
-      block.style.opacity = opacity;
-      block.style.transform = `translateY(${translateMax * (1 - opacity)}px)`;
-    });
   
     renderer.render(scene, camera);
     requestAnimationFrame(updateScene);
   }
   
   // --- FACE CHANGE (Swipe Handler) ---
-  // For vertical swipes: adjust verticalIndex and update targetRotX.
-  // For horizontal swipes, decide based on verticalIndex:
-  //   - if verticalIndex even: update targetRotY
-  //   - if verticalIndex odd: update targetRotZ
+  // Vertical swipes rotate about the X-axis.
+  // Horizontal swipes use Y rotation if the cube is upright (even verticalIndex)
+  // or Z rotation when rotated vertically (odd verticalIndex).
   function changeFace(direction) {
     if (isAnimating) return;
   
     if (direction === 'up') {
       verticalIndex++;
       targetRotX = -90 * verticalIndex;
-      textIndex = (textIndex + 1) % blocksCount;
     } else if (direction === 'down') {
       verticalIndex--;
       targetRotX = -90 * verticalIndex;
-      textIndex = (textIndex - 1 + blocksCount) % blocksCount;
     } else if (direction === 'left') {
       if (verticalIndex % 2 === 0) { 
-        // Cube is upright or inverted: left/right rotation about Y
         horizontalIndexY--;
         targetRotY = 90 * horizontalIndexY;
       } else {
-        // Cube rotated 90° or 270° vertically: rotate about Z for a true left/right flip
         horizontalIndexZ--;
         targetRotZ = 90 * horizontalIndexZ;
       }
@@ -291,13 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const deltaX = lastX - currentX;
     const deltaY = lastY - currentY;
   
-    if (!lockedAxis) {
+    // Only decide on an axis after a minimal "dead zone" has passed.
+    if (!lockedAxis && (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone)) {
       lockedAxis = Math.abs(deltaX) >= Math.abs(deltaY) ? 'x' : 'y';
     }
+  
     if (lockedAxis === 'x') {
       accumulatedDeltaX += deltaX * touchMult;
       accumulatedDeltaY = 0;
-    } else {
+    } else if (lockedAxis === 'y') {
       accumulatedDeltaY += deltaY * touchMult;
       accumulatedDeltaX = 0;
     }
@@ -333,18 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-  
-    if (textBlocks.length > 0) {
-      const first = textBlocks[0];
-      const rect = first.getBoundingClientRect();
-      const style = window.getComputedStyle(first);
-      const mb = parseFloat(style.marginBottom);
-      blockHeight = rect.height + mb;
-      contentHeight = blockHeight * blocksCount;
-      centerOffset = (window.innerHeight / 2) - (rect.height / 2);
-    }
   });
   
-  // --- BOOTSTRAP APP ---
-  setup();
+  // --- START ANIMATION ---
+  requestAnimationFrame(updateScene);
 });

@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
       new THREE.Vector3(...start),
       new THREE.Vector3(...end)
     );
-    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false); // radius: 0.02 for core
+    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false);
     wireframe.add(new THREE.Mesh(tubeGeometry, brightMat));
   });
 
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       new THREE.Vector3(...start),
       new THREE.Vector3(...end)
     );
-    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false); // radius: 0.03 for glow
+    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false);
     glowWireframe.add(new THREE.Mesh(tubeGeometry, glowMat));
   });
 
@@ -78,8 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   scene.add(glowWireframe);
   scene.add(wireframe);
 
-  // — TEXT SETUP (unchanged) —
-  const leftText  = document.getElementById('left-text');
+  // — TEXT SETUP —
+  const leftText = document.getElementById('left-text');
   const rightText = document.getElementById('right-text');
 
   const leftMessages = [
@@ -115,16 +115,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // — STATE & CONFIG —
-  let blockHeight     = 0;
-  const blocksCount   = leftMessages.length;
-  let contentHeight   = 0;
-  let rotationFactor  = 0;
-  let virtualScroll   = 0;
-  let textBlocks      = [];
-  const fadeRange     = 150;
-  const translateMax  = 20;
-  const touchMult     = 2;
-  let centerOffset    = 0;
+  let blockHeight = 0;
+  const blocksCount = leftMessages.length;
+  let contentHeight = 0;
+  let rotationFactor = 0;
+  let virtualScrollY = 0; // Vertical scroll
+  let virtualScrollX = 0; // Horizontal scroll
+  let textBlocks = [];
+  const fadeRange = 150;
+  const translateMax = 20;
+  const touchMult = 2;
+  let centerOffset = 0;
 
   const easeInOutQuad = x =>
     x < 0.5 ? 2 * x * x : 1 - ((-2 * x + 2) ** 2) / 2;
@@ -137,14 +138,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     requestAnimationFrame(() => {
       const first = textBlocks[0];
-      const rect  = first.getBoundingClientRect();
+      const rect = first.getBoundingClientRect();
       const style = window.getComputedStyle(first);
-      const mb    = parseFloat(style.marginBottom);
+      const mb = parseFloat(style.marginBottom);
 
-      blockHeight    = rect.height + mb;
-      contentHeight  = blockHeight * blocksCount;
+      blockHeight = rect.height + mb;
+      contentHeight = blockHeight * blocksCount;
       rotationFactor = Math.PI / blockHeight;
-      centerOffset   = (window.innerHeight / 2) - (rect.height / 2);
+      centerOffset = (window.innerHeight / 2) - (rect.height / 2);
 
       updateScene();
     });
@@ -152,32 +153,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // — RENDER & FADE LOOP —
   function updateScene() {
-    // rotate both wireframes
-    glowWireframe.rotation.y = -virtualScroll * rotationFactor;
-    wireframe.rotation.y     = -virtualScroll * rotationFactor;
+    // Rotate wireframes: vertical scroll rotates around X-axis, horizontal around Y-axis
+    glowWireframe.rotation.x = -virtualScrollY * rotationFactor;
+    wireframe.rotation.x = -virtualScrollY * rotationFactor;
+    glowWireframe.rotation.y = -virtualScrollX * rotationFactor;
+    wireframe.rotation.y = -virtualScrollX * rotationFactor;
 
-    // hue shift
-    const hue = (virtualScroll * 0.1) % 360;
+    // Hue shift
+    const hue = ((virtualScrollY + virtualScrollX) * 0.1) % 360;
     const h = (hue + 360) % 360 / 360;
     brightMat.color.setHSL(h, 1, 0.6);
     glowMat.color.setHSL(h, 1, 0.6);
 
-    // text scroll
-    const r = ((virtualScroll % contentHeight) + contentHeight) % contentHeight;
+    // Text scroll (only vertical)
+    const r = ((virtualScrollY % contentHeight) + contentHeight) % contentHeight;
     const offset = centerOffset - r;
-    leftText.style.transform  = `translateY(${offset}px)`;
+    leftText.style.transform = `translateY(${offset}px)`;
     rightText.style.transform = `translateY(${offset}px)`;
 
-    // text fade
+    // Text fade
     const midY = window.innerHeight / 2;
     textBlocks.forEach(block => {
-      const bRect   = block.getBoundingClientRect();
+      const bRect = block.getBoundingClientRect();
       const bCenter = bRect.top + bRect.height / 2;
-      const dist    = Math.abs(bCenter - midY);
-      const t       = Math.min(dist / fadeRange, 1);
-      const eased   = easeInOutQuad(t);
+      const dist = Math.abs(bCenter - midY);
+      const t = Math.min(dist / fadeRange, 1);
+      const eased = easeInOutQuad(t);
       const opacity = 1 - eased;
-      block.style.opacity   = opacity;
+      block.style.opacity = opacity;
       block.style.transform = `translateY(${translateMax * (1 - opacity)}px)`;
     });
 
@@ -187,18 +190,44 @@ document.addEventListener('DOMContentLoaded', () => {
   // — INPUT HANDLERS —
   function onWheel(e) {
     e.preventDefault();
-    virtualScroll += e.deltaY;
+    // Trackpad or mouse wheel: prioritize the dominant axis
+    const deltaX = e.deltaX || 0;
+    const deltaY = e.deltaY || 0;
+    const threshold = 2; // Minimum movement to register
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
+      // Horizontal scroll (trackpad two-finger left/right or Shift + Wheel)
+      virtualScrollX += deltaX * (e.shiftKey ? 2 : 1); // Amplify if Shift is held
+    } else if (Math.abs(deltaY) > threshold) {
+      // Vertical scroll
+      virtualScrollY += deltaY;
+    }
+
     updateScene();
   }
 
   function onTouchStart(e) {
     lastY = e.touches[0].clientY;
+    lastX = e.touches[0].clientX;
   }
 
   function onTouchMove(e) {
+    e.preventDefault(); // Prevent default scrolling
     const y = e.touches[0].clientY;
-    virtualScroll += (lastY - y) * touchMult;
+    const x = e.touches[0].clientX;
+    const deltaY = (lastY - y) * touchMult;
+    const deltaX = (lastX - x) * touchMult;
+    const threshold = 5; // Minimum movement to register
+
+    // Lock to dominant axis
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
+      virtualScrollX += deltaX;
+    } else if (Math.abs(deltaY) > threshold) {
+      virtualScrollY += deltaY;
+    }
+
     lastY = y;
+    lastX = x;
     updateScene();
   }
 
@@ -206,8 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('wheel', onWheel, { passive: false });
   } else {
     let lastY = 0;
+    let lastX = 0;
     window.addEventListener('touchstart', onTouchStart, { passive: false });
-    window.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
   }
 
   // — HANDLE RESIZE —
@@ -219,14 +249,14 @@ document.addEventListener('DOMContentLoaded', () => {
     camera.updateProjectionMatrix();
 
     const first = textBlocks[0];
-    const rect  = first.getBoundingClientRect();
+    const rect = first.getBoundingClientRect();
     const style = window.getComputedStyle(first);
-    const mb    = parseFloat(style.marginBottom);
+    const mb = parseFloat(style.marginBottom);
 
-    blockHeight    = rect.height + mb;
-    contentHeight  = blockHeight * blocksCount;
+    blockHeight = rect.height + mb;
+    contentHeight = blockHeight * blocksCount;
     rotationFactor = Math.PI / blockHeight;
-    centerOffset   = (window.innerHeight / 2) - (rect.height / 2);
+    centerOffset = (window.innerHeight / 2) - (rect.height / 2);
 
     updateScene();
   });

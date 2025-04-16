@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
     const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false);
     const mesh = new THREE.Mesh(tubeGeometry, brightMat);
-    mesh.raycast = () => {}; // Disable raycasting for wireframe
+    mesh.raycast = () => {};
     wireframe.add(mesh);
   });
 
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
     const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false);
     const mesh = new THREE.Mesh(tubeGeometry, glowMat);
-    mesh.raycast = () => {}; // Disable raycasting for glow wireframe
+    mesh.raycast = () => {};
     glowWireframe.add(mesh);
   });
   glowWireframe.scale.set(isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1);
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
       targetRotX = -90 * verticalIndex;
     } else if (direction === 'left') {
       if (verticalIndex % 2 === 0) {
-        horizontalIndexY--;
+        horizontalIndexY++; // Invert for correct left swipe
         targetRotY = 90 * horizontalIndexY;
       } else {
         horizontalIndexZ--;
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else if (direction === 'right') {
       if (verticalIndex % 2 === 0) {
-        horizontalIndexY++;
+        horizontalIndexY--; // Invert for correct right swipe
         targetRotY = 90 * horizontalIndexY;
       } else {
         horizontalIndexZ++;
@@ -261,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const mouse = new THREE.Vector2();
 
   cubeContainer.addEventListener('click', event => {
-    // Ensure coordinates are relative to the container
     const rect = cubeContainer.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -269,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(cube);
     
-    // Debug raycaster results
     console.log('Click detected', { mouseX: mouse.x, mouseY: mouse.y, intersects: intersects.length });
     
     if (intersects.length > 0) {

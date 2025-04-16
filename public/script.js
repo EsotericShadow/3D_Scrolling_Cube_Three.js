@@ -71,7 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
   edgePositions.forEach(([start, end]) => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
     const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false);
-    wireframe.add(new THREE.Mesh(tubeGeometry, brightMat));
+    const mesh = new THREE.Mesh(tubeGeometry, brightMat);
+    mesh.raycast = () => {}; // Disable raycasting for wireframe
+    wireframe.add(mesh);
   });
 
   const glowMat = new THREE.MeshBasicMaterial({ color: neonColor, transparent: true, opacity: 0.4 });
@@ -79,7 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
   edgePositions.forEach(([start, end]) => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
     const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false);
-    glowWireframe.add(new THREE.Mesh(tubeGeometry, glowMat));
+    const mesh = new THREE.Mesh(tubeGeometry, glowMat);
+    mesh.raycast = () => {}; // Disable raycasting for glow wireframe
+    glowWireframe.add(mesh);
   });
   glowWireframe.scale.set(isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1);
   scene.add(wireframe);
@@ -257,14 +261,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const mouse = new THREE.Vector2();
 
   cubeContainer.addEventListener('click', event => {
-    mouse.x = (event.clientX / cubeContainer.clientWidth) * 2 - 1;
-    mouse.y = -(event.clientY / cubeContainer.clientHeight) * 2 + 1;
+    // Ensure coordinates are relative to the container
+    const rect = cubeContainer.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
     raycaster.setFromCamera(mouse, camera);
-
     const intersects = raycaster.intersectObject(cube);
+    
+    // Debug raycaster results
+    console.log('Click detected', { mouseX: mouse.x, mouseY: mouse.y, intersects: intersects.length });
+    
     if (intersects.length > 0) {
       const faceIndex = Math.floor(intersects[0].faceIndex / 2);
+      console.log('Face clicked:', faceIndex, 'Link:', faceLinks[faceIndex]);
       window.open(faceLinks[faceIndex], '_blank');
+    } else {
+      console.log('No intersection with cube');
     }
   });
 

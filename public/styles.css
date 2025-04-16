@@ -1,3 +1,4 @@
+/* Disable default touch actions on the entire document */
 html, body {
   margin: 0;
   padding: 0;
@@ -6,6 +7,7 @@ html, body {
   overflow: hidden;
   background: linear-gradient(to bottom, #000, #222);
   font-family: 'Orbitron', sans-serif;
+  touch-action: none;
 }
 
 .container {
@@ -16,6 +18,7 @@ html, body {
   justify-content: center;
   align-items: center;
   background: linear-gradient(to bottom, #000, #222);
+  touch-action: none;
 }
 
 #cube-container {
@@ -23,6 +26,14 @@ html, body {
   z-index: 1;
   width: 100px;
   height: 100px;
+}
+
+/* Increase cube-container size for mobile devices */
+@media (max-width: 768px) {
+  #cube-container {
+    width: 150px;
+    height: 150px;
+  }
 }
 
 .text-column {

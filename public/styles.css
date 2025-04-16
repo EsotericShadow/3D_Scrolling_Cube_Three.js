@@ -17,6 +17,7 @@ html, body {
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   background: linear-gradient(to bottom, #000, #222);
@@ -30,10 +31,86 @@ html, body {
   height: 400px;
 }
 
+.header {
+  text-align: center;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.header.active {
+  opacity: 1;
+}
+
+.content {
+  text-align: center;
+  color: #fff;
+  margin-top: 20px;
+}
+
+#description {
+  margin: 0 20px;
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+#description.active {
+  opacity: 1;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #00aaff;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out, transform 0.2s ease;
+}
+
+.cta-button.active {
+  opacity: 1;
+}
+
+.cta-button:hover {
+  transform: scale(1.05);
+}
+
+.nav-instruction {
+  font-size: 14px;
+  color: #aaa;
+  margin-top: 10px;
+  opacity: 0.7;
+}
+
 /* Increase cube-container size on mobile */
 @media (max-width: 768px) {
   #cube-container {
     width: 250px;
     height: 250px;
+  }
+
+  .header {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  #description {
+    font-size: 14px;
+    margin: 0 15px;
+  }
+
+  .cta-button {
+    padding: 8px 16px;
+    margin-top: 8px;
+  }
+
+  .nav-instruction {
+    font-size: 12px;
   }
 }

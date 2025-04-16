@@ -1,3 +1,5 @@
+ok provide the full script.js file please:
+
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,50 +93,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- ROTATION STATE ---
   let verticalIndex = 0;
-  const currentQuaternion = new THREE.Quaternion();
-  const targetQuaternion = new THREE.Quaternion();
+  let horizontalIndexY = 0;
+  let horizontalIndexZ = 0;
+
+  let currentRotX = 0, currentRotY = 0, currentRotZ = 0;
+  let targetRotX = 0, targetRotY = 0, targetRotZ = 0;
   let isAnimating = false;
 
+  const toRad = deg => deg * Math.PI / 180;
   const lerpSpeed = 0.1;
   const swipeThreshold = 75;
   const touchMult = 2;
   const deadZone = 10;
 
   function updateScene() {
-    if (isAnimating) {
-      currentQuaternion.slerp(targetQuaternion, lerpSpeed);
-      cube.quaternion.copy(currentQuaternion);
-      wireframe.quaternion.copy(currentQuaternion);
-      glowWireframe.quaternion.copy(currentQuaternion);
-      if (currentQuaternion.angleTo(targetQuaternion) < 0.01) {
-        currentQuaternion.copy(targetQuaternion);
-        isAnimating = false;
-      }
+    let animating = false;
+    if (Math.abs(currentRotX - targetRotX) > 0.1) {
+      currentRotX += (targetRotX - currentRotX) * lerpSpeed;
+      animating = true;
+    } else {
+      currentRotX = targetRotX;
     }
+    if (Math.abs(currentRotY - targetRotY) > 0.1) {
+      currentRotY += (targetRotY - currentRotY) * lerpSpeed;
+      animating = true;
+    } else {
+      currentRotY = targetRotY;
+    }
+    if (Math.abs(currentRotZ - targetRotZ) > 0.1) {
+      currentRotZ += (targetRotZ - currentRotZ) * lerpSpeed;
+      animating = true;
+    } else {
+      currentRotZ = targetRotZ;
+    }
+
+    isAnimating = animating;
+    if (isAnimating) {
+      accumulatedDeltaX = 0;
+      accumulatedDeltaY = 0;
+    }
+
+    cube.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
+    wireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
+    glowWireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
+
     renderer.render(scene, camera);
     requestAnimationFrame(updateScene);
   }
 
   function changeFace(direction) {
     if (isAnimating) return;
-    let swipeRotation;
+
     if (direction === 'up') {
       verticalIndex++;
-      swipeRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+      targetRotX = -90 * verticalIndex;
     } else if (direction === 'down') {
       verticalIndex--;
-      swipeRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+      targetRotX = -90 * verticalIndex;
     } else if (direction === 'left') {
-      const axis = (verticalIndex % 2 === 0) ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, -1);
-      swipeRotation = new THREE.Quaternion().setFromAxisAngle(axis, Math.PI / 2);
+      if (verticalIndex % 2 === 0) {
+        horizontalIndexY++; // Normal direction for even verticalIndex
+        targetRotY = 90 * horizontalIndexY;
+      } else {
+        horizontalIndexZ++; // Flip direction for odd verticalIndex
+        targetRotZ = 90 * horizontalIndexZ;
+      }
     } else if (direction === 'right') {
-      const axis = (verticalIndex % 2 === 0) ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, -1);
-      swipeRotation = new THREE.Quaternion().setFromAxisAngle(axis, -Math.PI / 2);
+      if (verticalIndex % 2 === 0) {
+        horizontalIndexY--; // Normal direction for even verticalIndex
+        targetRotY = 90 * horizontalIndexY;
+      } else {
+        horizontalIndexZ--; // Flip direction for odd verticalIndex
+        targetRotZ = 90 * horizontalIndexZ;
+      }
     }
-    if (swipeRotation) {
-      targetQuaternion.copy(swipeRotation).multiply(currentQuaternion);
-      isAnimating = true;
-    }
+
+    accumulatedDeltaX = 0;
+    accumulatedDeltaY = 0;
+    lockedAxis = null;
+    isAnimating = true;
   }
 
   let accumulatedDeltaX = 0;

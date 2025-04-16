@@ -4,11 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
   const isMobile = window.matchMedia('(max-width: 768px)').matches || ('ontouchstart' in window);
+  const cubeSize = isMobile ? 1.5 : 1;
+  const wireframeScale = isMobile ? cubeSize / 2 : 0.5;
 
   const scene = new THREE.Scene();
   const cubeContainer = document.getElementById('cube-container');
   const camera = new THREE.PerspectiveCamera(75, cubeContainer.clientWidth / cubeContainer.clientHeight, 0.1, 1000);
-  camera.position.z = 2;
+  camera.position.z = isMobile ? 2.5 : 2;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
@@ -41,11 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     "https://evergreenwebsolutions.ca/Business-Digitization"
   ];
 
-  const cubeGeometry = new THREE.BoxGeometry(
-  isMobile ? 1.5 : 1, // Increase width on mobile/tablet
-  isMobile ? 1.5 : 1, // Increase height on mobile/tablet
-  isMobile ? 1.5 : 1  // Increase depth on mobile/tablet
-);
+  const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
   const cubeMaterials = Array(6).fill(videoMaterial);
   const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
   scene.add(cube);
@@ -55,18 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const brightMat = new THREE.MeshBasicMaterial({ color: neonColor });
 
   const edgePositions = [
-    [[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5]],
-    [[-0.5,  0.5, -0.5], [0.5,  0.5, -0.5]],
-    [[-0.5, -0.5,  0.5], [0.5, -0.5,  0.5]],
-    [[-0.5,  0.5,  0.5], [0.5,  0.5,  0.5]],
-    [[-0.5, -0.5, -0.5], [-0.5,  0.5, -0.5]],
-    [[ 0.5, -0.5, -0.5], [ 0.5,  0.5, -0.5]],
-    [[-0.5, -0.5,  0.5], [-0.5,  0.5,  0.5]],
-    [[ 0.5, -0.5,  0.5], [ 0.5,  0.5,  0.5]],
-    [[-0.5, -0.5, -0.5], [-0.5, -0.5,  0.5]],
-    [[ 0.5, -0.5, -0.5], [ 0.5, -0.5,  0.5]],
-    [[-0.5,  0.5, -0.5], [-0.5,  0.5,  0.5]],
-    [[ 0.5,  0.5, -0.5], [ 0.5,  0.5,  0.5]]
+    [[-wireframeScale, -wireframeScale, -wireframeScale], [wireframeScale, -wireframeScale, -wireframeScale]],
+    [[-wireframeScale,  wireframeScale, -wireframeScale], [wireframeScale,  wireframeScale, -wireframeScale]],
+    [[-wireframeScale, -wireframeScale,  wireframeScale], [wireframeScale, -wireframeScale,  wireframeScale]],
+    [[-wireframeScale,  wireframeScale,  wireframeScale], [wireframeScale,  wireframeScale,  wireframeScale]],
+    [[-wireframeScale, -wireframeScale, -wireframeScale], [-wireframeScale,  wireframeScale, -wireframeScale]],
+    [[ wireframeScale, -wireframeScale, -wireframeScale], [ wireframeScale,  wireframeScale, -wireframeScale]],
+    [[-wireframeScale, -wireframeScale,  wireframeScale], [-wireframeScale,  wireframeScale,  wireframeScale]],
+    [[ wireframeScale, -wireframeScale,  wireframeScale], [ wireframeScale,  wireframeScale,  wireframeScale]],
+    [[-wireframeScale, -wireframeScale, -wireframeScale], [-wireframeScale, -wireframeScale,  wireframeScale]],
+    [[ wireframeScale, -wireframeScale, -wireframeScale], [ wireframeScale, -wireframeScale,  wireframeScale]],
+    [[-wireframeScale,  wireframeScale, -wireframeScale], [-wireframeScale,  wireframeScale,  wireframeScale]],
+    [[ wireframeScale,  wireframeScale, -wireframeScale], [ wireframeScale,  wireframeScale,  wireframeScale]]
   ];
 
   const wireframe = new THREE.Group();
@@ -83,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false);
     glowWireframe.add(new THREE.Mesh(tubeGeometry, glowMat));
   });
-  glowWireframe.scale.set(1.1, 1.1, 1.1);
+  glowWireframe.scale.set(isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1);
   scene.add(wireframe);
   scene.add(glowWireframe);
 

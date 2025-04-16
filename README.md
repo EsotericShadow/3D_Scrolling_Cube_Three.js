@@ -4,7 +4,7 @@
 
 ### Overview
 
-Neon Cube is a futuristic, immersive web experience that showcases a rotating, glowing 3D cube built with Three.js and accompanied by vertically scrolling text columns. User interactions via mouse wheel or touch gestures drive the cube’s orientation changes and cycle through paired text blocks, creating a dynamic, cyber-themed effect. The project now features enhanced rotation logic to ensure that horizontal swipes are applied relative to the cube’s current vertical orientation. This prevents unintended diagonal rotations by switching the horizontal control axis (Y vs. Z) depending on the cube’s vertical flip state.
+Neon Cube is a futuristic, immersive web experience that showcases a rotating, glowing 3D cube built with Three.js. User interactions via mouse wheel or touch gestures drive the cube’s orientation changes, creating a dynamic, cyber-themed effect. The project features enhanced rotation logic to ensure that horizontal swipes are applied relative to the cube’s current vertical orientation. This prevents unintended diagonal rotations by switching the horizontal control axis (Y vs. Z) depending on the cube’s vertical flip state. The mobile experience has been streamlined by removing text fade effects and increasing cube size for improved usability.
 
 ---
 
@@ -42,7 +42,7 @@ Defines the basic layout and structure of the web app. It includes:
 ### 🎨 styles.css
 
 **Purpose:**  
-Provides styling for layout, responsive behavior, and visual effects such as glow and fade animations.
+Provides styling for layout, responsive behavior, and visual effects such as glow.
 
 **Key Features:**
 
@@ -54,8 +54,8 @@ Provides styling for layout, responsive behavior, and visual effects such as glo
   A fixed, full-screen flexbox design centers the cube and text columns.
 - **Responsive Design:**  
   Media queries adjust cube and text dimensions for desktop and mobile devices.
-- **Text Styling:**  
-  Text blocks use opacity and CSS transforms managed via JavaScript to produce smooth fade-in effects.
+- **Mobile-Specific:**  
+  On mobile, the cube is enlarged for better interaction and all text fade/transform animations are removed to simplify the experience.
 
 ---
 
@@ -94,7 +94,7 @@ Manages the 3D scene setup, the animation rendering loop, gesture handling, and 
    - **Content:**  
      Two arrays (left and right) of cyber-inspired messages populate the corresponding text containers.
    - **Animation:**  
-     Text blocks fade and translate vertically in synchronization with the cube’s rotation. Each vertical flip of the cube updates the displayed text block.
+     On desktop, text blocks fade and translate vertically in synchronization with the cube’s rotation. On mobile, text effects are disabled for a cleaner and more performant experience.
 
 5. **🔁 Animation & Rendering**
 
@@ -152,4 +152,5 @@ Manages the 3D scene setup, the animation rendering loop, gesture handling, and 
 
 ### 📌 Summary
 
-Neon Cube is a striking visual showcase that leverages WebGL and JavaScript to create an interactive, stylized 3D cube paired with synchronized scrolling text. With its modular structure and adaptive interaction logic—including new orientation-aware horizontal rotation—this project offers both aesthetic appeal and technical flexibility. Whether used for branding, a portfolio, or artistic expression, Neon Cube demonstrates how a careful balance of design and code can produce a futuristic web experience that feels both smooth and immersive.
+Neon Cube is a striking visual showcase that leverages WebGL and JavaScript to create an interactive, stylized 3D cube paired with synchronized scrolling text. With its modular structure and adaptive interaction logic—including orientation-aware horizontal rotation and mobile-specific optimizations—this project offers both aesthetic appeal and technical flexibility. Whether used for branding, a portfolio, or artistic expression, Neon Cube demonstrates how a careful balance of design and code can produce a futuristic web experience that feels both smooth and immersive.
+

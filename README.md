@@ -4,7 +4,7 @@
 
 This project is perfect for creating engaging navigation hubs to share multiple links or content categories in a compact, visually stunning format. Future plans include a user-friendly interface for generating and managing personalized cubes through customizable forms.
 
-👉 **Try the Live Demo!**
+👉 **Try the Live Demo!** https://3-d-scrolling-cube-three-js.vercel.app
 
 ---
 

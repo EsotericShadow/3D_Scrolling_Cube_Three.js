@@ -3,7 +3,7 @@
 **Cubic Matrix Navigation** is a futuristic, interactive 3D web experience powered by [Three.js](https://threejs.org/). It features a rotating cube where each face showcases unique content—headers, descriptions, and clickable links—textured with a dynamic video loop. Designed for seamless use across devices, it offers intuitive navigation via mouse, touch, or keyboard, with adaptive performance optimizations and a guided tutorial system.
 
 This project is perfect for creating engaging navigation hubs to share multiple links or content categories in a compact, visually stunning format. Future plans include a user-friendly interface for generating and managing personalized cubes through customizable forms.
-
+https://3-d-scrolling-cube-three-js.vercel.app
 ---
 
 ## ✨ Features

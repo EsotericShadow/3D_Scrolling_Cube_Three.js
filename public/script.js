@@ -80,15 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
     video.load();
     video.play().catch(e => {
       console.warn('Auto-play prevented:', e);
-      // Add play button for browsers that block autoplay
-      const playButton = document.createElement('button');
-      playButton.textContent = 'Play';
-      playButton.className = 'play-button';
-      playButton.addEventListener('click', () => {
-        video.play();
-        playButton.remove();
-      });
-      cubeContainer.appendChild(playButton);
+      // Auto-play was prevented, but we'll continue without a play button
+      // as it's not necessary per user request
     });
   });
 
@@ -867,7 +860,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Set up tutorial button
-  swipeHintButton.addEventListener('click', closeTutorial);
+  swipeHintButton.addEventListener('click', () => {
+    closeTutorial();
+  });
+  
+  // Also add touchend event for mobile
+  swipeHintButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    closeTutorial();
+  });
   
   // Initialize content and start animation loop once video is loaded
   videoLoadPromise.then(() => {

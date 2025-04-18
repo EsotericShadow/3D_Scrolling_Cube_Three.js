@@ -81,6 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show tutorial after a short delay
     setTimeout(() => {
       showTutorial();
-    }, 1000);
+    }, 500);
   });
 });

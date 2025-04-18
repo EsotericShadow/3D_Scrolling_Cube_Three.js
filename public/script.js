@@ -3,29 +3,94 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.m
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
+  // Enhanced device detection with feature detection
   const isMobile = window.matchMedia('(max-width: 768px)').matches || ('ontouchstart' in window);
+  const isTablet = !isMobile && window.matchMedia('(max-width: 1024px)').matches;
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+  const hasReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  // Performance optimization - detect device capabilities
+  const isLowPerfDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && 
+                          navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
+  
+  // Adaptive sizing based on device
   const cubeSize = isMobile ? 1.5 : 1;
   const wireframeScale = isMobile ? cubeSize / 2 : 0.5;
+  
+  // Adaptive animation speeds
+  const lerpSpeed = hasReducedMotion ? 0.2 : (isLowPerfDevice ? 0.15 : 0.1);
+  const animationDuration = hasReducedMotion ? 150 : 300;
 
+  // Scene setup with performance optimizations
   const scene = new THREE.Scene();
   const cubeContainer = document.getElementById('cube-container');
-  const camera = new THREE.PerspectiveCamera(75, cubeContainer.clientWidth / cubeContainer.clientHeight, 0.1, 1000);
-  camera.position.z = isMobile ? 2.5 : 2;
+  
+  // Add loading indicator
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.className = 'loading-indicator active';
+  cubeContainer.appendChild(loadingIndicator);
+  
+  // Add touch feedback element
+  const touchFeedback = document.createElement('div');
+  touchFeedback.className = 'touch-feedback';
+  document.body.appendChild(touchFeedback);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // Camera setup with adaptive FOV
+  const fov = isMobile ? 80 : (isTablet ? 75 : 70);
+  const camera = new THREE.PerspectiveCamera(fov, cubeContainer.clientWidth / cubeContainer.clientHeight, 0.1, 1000);
+  camera.position.z = isMobile ? 2.5 : (isTablet ? 2.2 : 2);
+
+  // Renderer with adaptive quality
+  const renderer = new THREE.WebGLRenderer({ 
+    antialias: !isLowPerfDevice, 
+    alpha: true,
+    powerPreference: 'high-performance'
+  });
   renderer.setSize(cubeContainer.clientWidth, cubeContainer.clientHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(isLowPerfDevice ? 1 : Math.min(window.devicePixelRatio, 2));
   cubeContainer.appendChild(renderer.domElement);
-  scene.add(new THREE.AmbientLight(0xffffff, 1));
+  
+  // Adaptive lighting
+  const ambientIntensity = isLowPerfDevice ? 1.2 : 1;
+  scene.add(new THREE.AmbientLight(0xffffff, ambientIntensity));
 
-  // --- VIDEO TEXTURE SETUP ---
+  // --- VIDEO TEXTURE SETUP WITH PERFORMANCE OPTIMIZATIONS ---
   const video = document.createElement('video');
   video.src = 'cube_texture.mp4';
   video.loop = true;
   video.muted = true;
   video.playsInline = true;
   video.autoplay = true;
-  video.play();
+  
+  // Adaptive video quality
+  if (isLowPerfDevice) {
+    video.width = 512;
+    video.height = 512;
+  }
+  
+  // Promise-based video loading
+  const videoLoadPromise = new Promise((resolve) => {
+    video.addEventListener('canplaythrough', () => {
+      resolve();
+    });
+    
+    // Fallback if video takes too long
+    setTimeout(resolve, 3000);
+    
+    video.load();
+    video.play().catch(e => {
+      console.warn('Auto-play prevented:', e);
+      // Add play button for browsers that block autoplay
+      const playButton = document.createElement('button');
+      playButton.textContent = 'Play';
+      playButton.className = 'play-button';
+      playButton.addEventListener('click', () => {
+        video.play();
+        playButton.remove();
+      });
+      cubeContainer.appendChild(playButton);
+    });
+  });
 
   const videoTexture = new THREE.VideoTexture(video);
   videoTexture.minFilter = THREE.LinearFilter;
@@ -48,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
   scene.add(cube);
 
-  // --- WIRE + GLOW ---
+  // --- WIRE + GLOW WITH ADAPTIVE QUALITY ---
   const neonColor = new THREE.Color('hsl(200, 100%, 60%)');
   const brightMat = new THREE.MeshBasicMaterial({ color: neonColor });
 
@@ -67,27 +132,36 @@ document.addEventListener('DOMContentLoaded', () => {
     [[ wireframeScale,  wireframeScale, -wireframeScale], [ wireframeScale,  wireframeScale,  wireframeScale]]
   ];
 
+  // Adaptive wireframe quality
+  const tubularSegments = isLowPerfDevice ? 1 : 1;
+  const radiusSegments = isLowPerfDevice ? 4 : 8;
+  
   const wireframe = new THREE.Group();
   edgePositions.forEach(([start, end]) => {
     const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
-    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.02, 8, false);
+    const tubeGeometry = new THREE.TubeGeometry(path, tubularSegments, 0.02, radiusSegments, false);
     const mesh = new THREE.Mesh(tubeGeometry, brightMat);
     mesh.raycast = () => {};
     wireframe.add(mesh);
   });
 
-  const glowMat = new THREE.MeshBasicMaterial({ color: neonColor, transparent: true, opacity: 0.4 });
-  const glowWireframe = new THREE.Group();
-  edgePositions.forEach(([start, end]) => {
-    const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
-    const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.03, 8, false);
-    const mesh = new THREE.Mesh(tubeGeometry, glowMat);
-    mesh.raycast = () => {};
-    glowWireframe.add(mesh);
-  });
-  glowWireframe.scale.set(isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1);
+  // Only add glow effect on higher performance devices
+  let glowWireframe;
+  if (!isLowPerfDevice) {
+    const glowMat = new THREE.MeshBasicMaterial({ color: neonColor, transparent: true, opacity: 0.4 });
+    glowWireframe = new THREE.Group();
+    edgePositions.forEach(([start, end]) => {
+      const path = new THREE.LineCurve3(new THREE.Vector3(...start), new THREE.Vector3(...end));
+      const tubeGeometry = new THREE.TubeGeometry(path, tubularSegments, 0.03, radiusSegments, false);
+      const mesh = new THREE.Mesh(tubeGeometry, glowMat);
+      mesh.raycast = () => {};
+      glowWireframe.add(mesh);
+    });
+    glowWireframe.scale.set(isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1, isMobile ? 1.15 : 1.1);
+    scene.add(glowWireframe);
+  }
+  
   scene.add(wireframe);
-  scene.add(glowWireframe);
 
   // --- CONTENT FOR EACH FACE ---
   const faceContents = [
@@ -99,21 +173,25 @@ document.addEventListener('DOMContentLoaded', () => {
     { header: "Business Digitization", description: "Digitize your business with us.", cta: "https://evergreenwebsolutions.ca/Business-Digitization" }
   ];
 
+  // Map from face normals to face indices
   const faceNormals = [
-    new THREE.Vector3(1, 0, 0),  // right
-    new THREE.Vector3(-1, 0, 0), // left
-    new THREE.Vector3(0, 1, 0),  // top
-    new THREE.Vector3(0, -1, 0), // bottom
-    new THREE.Vector3(0, 0, 1),  // front
-    new THREE.Vector3(0, 0, -1)  // back
+    new THREE.Vector3(1, 0, 0),  // right (0)
+    new THREE.Vector3(-1, 0, 0), // left (1)
+    new THREE.Vector3(0, 1, 0),  // top (2)
+    new THREE.Vector3(0, -1, 0), // bottom (3)
+    new THREE.Vector3(0, 0, 1),  // front (4)
+    new THREE.Vector3(0, 0, -1)  // back (5)
   ];
 
-  let currentFrontFace = 0;
+  let currentFrontFace = 4; // Start with front face
+  let isAnimating = false;
+  let targetQuaternion = new THREE.Quaternion();
 
   function getFrontFace() {
     const viewDir = new THREE.Vector3(0, 0, -1);
     let maxDot = -1;
     let frontFaceIndex = 0;
+    
     faceNormals.forEach((normal, index) => {
       const transformedNormal = normal.clone().applyQuaternion(cube.quaternion);
       const dot = transformedNormal.dot(viewDir);
@@ -122,235 +200,393 @@ document.addEventListener('DOMContentLoaded', () => {
         frontFaceIndex = index;
       }
     });
+    
     return frontFaceIndex;
   }
 
+  // Enhanced content update with smoother transitions
   function updateContent(index) {
     const header = document.getElementById('header');
     const description = document.getElementById('description');
     const cta = document.getElementById('cta');
 
+    // Remove active classes with staggered timing
     header.classList.remove('active');
-    description.classList.remove('active');
-    cta.classList.remove('active');
+    setTimeout(() => description.classList.remove('active'), 50);
+    setTimeout(() => cta.classList.remove('active'), 100);
 
+    // Update content after fade out
     setTimeout(() => {
       header.textContent = faceContents[index].header;
       description.textContent = faceContents[index].description;
       cta.href = faceContents[index].cta;
       cta.textContent = "Learn More";
 
+      // Add active classes with staggered timing
       header.classList.add('active');
-      description.classList.add('active');
-      cta.classList.add('active');
-    }, 150); // Delay to sync with fade-out
+      setTimeout(() => description.classList.add('active'), 50);
+      setTimeout(() => cta.classList.add('active'), 100);
+    }, animationDuration); // Adaptive timing based on device capabilities
   }
 
-  // --- ROTATION STATE ---
-  let verticalIndex = 0;
-  let horizontalIndexY = 0;
-  let horizontalIndexZ = 0;
+  // IMPROVED ROTATION SYSTEM USING CAMERA-ALIGNED AXES
+  function getRotationAxis(direction) {
+    // Define fixed camera-relative axes
+    // These axes are always aligned with the camera view, not the cube's orientation
+    const cameraUp = new THREE.Vector3(0, 1, 0);
+    const cameraRight = new THREE.Vector3(1, 0, 0);
+    
+    // Determine which axis to rotate around based on swipe direction
+    let axis;
+    switch(direction) {
+      case 'up': 
+        axis = cameraRight.clone().negate(); // Inverted to match expected behavior
+        break;
+      case 'down': 
+        axis = cameraRight.clone(); // Inverted to match expected behavior
+        break;
+      case 'left': 
+        axis = cameraUp.clone(); 
+        break;
+      case 'right': 
+        axis = cameraUp.clone().negate(); 
+        break;
+      default: 
+        axis = cameraUp.clone();
+    }
+    
+    // Transform the camera-relative axis to world space
+    return axis.applyQuaternion(camera.quaternion).normalize();
+  }
 
-  let currentRotX = 0, currentRotY = 0, currentRotZ = 0;
-  let targetRotX = 0, targetRotY = 0, targetRotZ = 0;
-  let isAnimating = false;
+  // Improved changeFace function with controlled rotation
+  function changeFace(direction) {
+    if (isAnimating) return;
+    
+    // Get the rotation axis based on camera-aligned axes
+    const rotationAxis = getRotationAxis(direction);
+    
+    // Create a quaternion for a 90-degree rotation around this axis
+    const rotationQuaternion = new THREE.Quaternion();
+    rotationQuaternion.setFromAxisAngle(rotationAxis, Math.PI/2);
+    
+    // Set the target quaternion by multiplying the current quaternion with the rotation
+    targetQuaternion = cube.quaternion.clone();
+    targetQuaternion.premultiply(rotationQuaternion);
+    
+    // Set animation flag
+    isAnimating = true;
+    
+    // Add haptic feedback on supported devices
+    if (navigator.vibrate && isMobile) {
+      navigator.vibrate(20);
+    }
+  }
 
-  const toRad = deg => deg * Math.PI / 180;
-  const lerpSpeed = 0.1;
-  const swipeThreshold = 75;
-  const touchMult = 2;
-  const deadZone = 10;
-
+  // Enhanced animation loop with performance optimizations
   function updateScene() {
-    let animating = false;
-    if (Math.abs(currentRotX - targetRotX) > 0.1) {
-      currentRotX += (targetRotX - currentRotX) * lerpSpeed;
-      animating = true;
-    } else {
-      currentRotX = targetRotX;
-    }
-    if (Math.abs(currentRotY - targetRotY) > 0.1) {
-      currentRotY += (targetRotY - currentRotY) * lerpSpeed;
-      animating = true;
-    } else {
-      currentRotY = targetRotY;
-    }
-    if (Math.abs(currentRotZ - targetRotZ) > 0.1) {
-      currentRotZ += (targetRotZ - currentRotZ) * lerpSpeed;
-      animating = true;
-    } else {
-      currentRotZ = targetRotZ;
-    }
-
-    isAnimating = animating;
     if (isAnimating) {
-      accumulatedDeltaX = 0;
-      accumulatedDeltaY = 0;
-    } else {
-      const newFrontFace = getFrontFace();
-      if (newFrontFace !== currentFrontFace) {
-        currentFrontFace = newFrontFace;
-        updateContent(newFrontFace);
+      // Smoothly interpolate to the target quaternion with adaptive speed
+      cube.quaternion.slerp(targetQuaternion, lerpSpeed);
+      wireframe.quaternion.copy(cube.quaternion);
+      if (!isLowPerfDevice && glowWireframe) {
+        glowWireframe.quaternion.copy(cube.quaternion);
+      }
+      
+      // Check if we're close enough to the target
+      if (cube.quaternion.dot(targetQuaternion) > 0.99999) {
+        cube.quaternion.copy(targetQuaternion);
+        wireframe.quaternion.copy(targetQuaternion);
+        if (!isLowPerfDevice && glowWireframe) {
+          glowWireframe.quaternion.copy(targetQuaternion);
+        }
+        isAnimating = false;
+        
+        // Update content based on the new front face
+        const newFrontFace = getFrontFace();
+        if (newFrontFace !== currentFrontFace) {
+          currentFrontFace = newFrontFace;
+          updateContent(newFrontFace);
+        }
       }
     }
-
-    cube.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
-    wireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
-    glowWireframe.rotation.set(toRad(currentRotX), toRad(currentRotY), toRad(currentRotZ));
-
+    
+    // Adaptive rendering based on device performance
     renderer.render(scene, camera);
     requestAnimationFrame(updateScene);
   }
 
-  function changeFace(direction) {
-    if (isAnimating) return;
-
-    if (direction === 'up') {
-      verticalIndex++;
-      targetRotX = -90 * verticalIndex;
-    } else if (direction === 'down') {
-      verticalIndex--;
-      targetRotX = -90 * verticalIndex;
-    } else if (direction === 'left') {
-      if (verticalIndex % 2 === 0) {
-        horizontalIndexY++;
-        targetRotY = 90 * horizontalIndexY;
-      } else {
-        horizontalIndexZ--;
-        targetRotZ = 90 * horizontalIndexZ;
-      }
-    } else if (direction === 'right') {
-      if (verticalIndex % 2 === 0) {
-        horizontalIndexY--;
-        targetRotY = 90 * horizontalIndexY;
-      } else {
-        horizontalIndexZ++;
-        targetRotZ = 90 * horizontalIndexZ;
-      }
-    }
-
-    accumulatedDeltaX = 0;
-    accumulatedDeltaY = 0;
-    lockedAxis = null;
-    isAnimating = true;
-  }
-
-  let accumulatedDeltaX = 0;
-  let accumulatedDeltaY = 0;
-  let lockedAxis = null;
-
+  // COMPLETELY REDESIGNED INPUT HANDLING
+  // This approach uses gesture IDs to ensure one rotation per distinct gesture
+  
+  // Gesture tracking
+  let currentGestureId = null;
+  let gestureProcessed = false;
+  let gestureDirection = null;
+  let gestureStartTime = 0;
+  
+  // Thresholds
+  const minSwipeDistance = isMobile ? 30 : 50;
+  const gestureTimeout = 500; // ms
+  
+  // Wheel event handling - completely redesigned
   function onWheel(e) {
-    if (isAnimating) return;
     e.preventDefault();
-    const deltaX = e.deltaX || 0;
-    const deltaY = e.deltaY || 0;
-
-    if (e.shiftKey) {
-      accumulatedDeltaX += deltaX;
-      accumulatedDeltaY = 0;
-    } else {
-      if (Math.abs(deltaY) >= Math.abs(deltaX)) {
-        accumulatedDeltaY += deltaY;
-        accumulatedDeltaX = 0;
-      } else {
-        accumulatedDeltaX += deltaX;
-        accumulatedDeltaY = 0;
+    
+    if (isAnimating) return;
+    
+    // Generate a unique ID for this wheel event sequence
+    const now = Date.now();
+    const gestureId = `wheel_${now}`;
+    
+    // If this is a new gesture or the previous one timed out
+    if (currentGestureId !== gestureId && (!currentGestureId || now - gestureStartTime > gestureTimeout)) {
+      currentGestureId = gestureId;
+      gestureStartTime = now;
+      gestureProcessed = false;
+      
+      // Determine direction from this single event
+      const deltaX = e.deltaX || 0;
+      const deltaY = e.deltaY || 0;
+      
+      // Only process if the movement is significant
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        if (Math.abs(deltaY) >= Math.abs(deltaX)) {
+          gestureDirection = deltaY > 0 ? 'up' : 'down';
+        } else {
+          gestureDirection = deltaX > 0 ? 'right' : 'left';
+        }
+        
+        // Process the gesture immediately
+        if (!gestureProcessed) {
+          changeFace(gestureDirection);
+          gestureProcessed = true;
+          
+          // Clear the gesture after processing
+          setTimeout(() => {
+            if (currentGestureId === gestureId) {
+              currentGestureId = null;
+            }
+          }, gestureTimeout);
+        }
       }
     }
-
-    if (Math.abs(accumulatedDeltaX) > swipeThreshold) {
-      changeFace(accumulatedDeltaX > 0 ? 'right' : 'left');
-    } else if (Math.abs(accumulatedDeltaY) > swipeThreshold) {
-      changeFace(accumulatedDeltaY > 0 ? 'up' : 'down');
-    }
   }
-
-  let lastX = 0, lastY = 0;
-
+  
+  // Touch handling variables
+  let touchStartX = 0;
+  let touchStartY = 0;
+  
+  // Touch start - completely redesigned
   function onTouchStart(e) {
-    lastX = e.touches[0].clientX;
-    lastY = e.touches[0].clientY;
-    lockedAxis = null;
-    accumulatedDeltaX = 0;
-    accumulatedDeltaY = 0;
-  }
-
-  function onTouchMove(e) {
-    if (isAnimating) return;
     e.preventDefault();
+    
+    if (isAnimating) return;
+    
+    // Record start position
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    
+    // Generate a unique ID for this touch sequence
+    const gestureId = `touch_${Date.now()}`;
+    currentGestureId = gestureId;
+    gestureStartTime = Date.now();
+    gestureProcessed = false;
+    gestureDirection = null;
+    
+    // Show touch feedback
+    touchFeedback.style.left = `${touchStartX}px`;
+    touchFeedback.style.top = `${touchStartY}px`;
+    touchFeedback.classList.add('active');
+    
+    // Remove after animation completes
+    setTimeout(() => {
+      touchFeedback.classList.remove('active');
+    }, 500);
+  }
+  
+  // Touch move - completely redesigned
+  function onTouchMove(e) {
+    e.preventDefault();
+    
+    if (isAnimating || gestureProcessed) return;
+    
     const currentX = e.touches[0].clientX;
     const currentY = e.touches[0].clientY;
-    const deltaX = lastX - currentX;
-    const deltaY = lastY - currentY;
-
-    if (!lockedAxis && (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone)) {
-      lockedAxis = Math.abs(deltaX) >= Math.abs(deltaY) ? 'x' : 'y';
+    
+    // Calculate distance moved
+    const deltaX = touchStartX - currentX;
+    const deltaY = touchStartY - currentY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Only process if we've moved enough distance
+    if (distance >= minSwipeDistance) {
+      // Determine primary direction
+      if (Math.abs(deltaY) >= Math.abs(deltaX)) {
+        gestureDirection = deltaY > 0 ? 'up' : 'down';
+      } else {
+        gestureDirection = deltaX > 0 ? 'right' : 'left';
+      }
+      
+      // Process the gesture
+      if (!gestureProcessed && gestureDirection) {
+        changeFace(gestureDirection);
+        gestureProcessed = true;
+      }
     }
-
-    if (lockedAxis === 'x') {
-      accumulatedDeltaX += deltaX * touchMult;
-      accumulatedDeltaY = 0;
-    } else if (lockedAxis === 'y') {
-      accumulatedDeltaY += deltaY * touchMult;
-      accumulatedDeltaX = 0;
-    }
-
-    if (Math.abs(accumulatedDeltaX) > swipeThreshold) {
-      changeFace(accumulatedDeltaX > 0 ? 'right' : 'left');
-    } else if (Math.abs(accumulatedDeltaY) > swipeThreshold) {
-      changeFace(accumulatedDeltaY > 0 ? 'up' : 'down');
-    }
-
-    lastX = currentX;
-    lastY = currentY;
+  }
+  
+  // Touch end - completely redesigned
+  function onTouchEnd(e) {
+    e.preventDefault();
+    
+    // Clear the current gesture after a delay
+    setTimeout(() => {
+      currentGestureId = null;
+      gestureProcessed = false;
+      gestureDirection = null;
+    }, 50);
   }
 
-  function onTouchEnd() {
-    lockedAxis = null;
-    accumulatedDeltaX = 0;
-    accumulatedDeltaY = 0;
-  }
-
+  // Set up event listeners based on device type with passive option for better performance
   if (!isMobile) {
     window.addEventListener('wheel', onWheel, { passive: false });
+    
+    // Add keyboard navigation for desktop
+    window.addEventListener('keydown', (e) => {
+      if (isAnimating) return;
+      
+      // Generate a unique ID for this key event
+      const gestureId = `key_${Date.now()}`;
+      
+      // Only process if this is a new gesture
+      if (currentGestureId !== gestureId) {
+        currentGestureId = gestureId;
+        gestureProcessed = false;
+        
+        let direction = null;
+        switch(e.key) {
+          case 'ArrowUp':
+            direction = 'up';
+            break;
+          case 'ArrowDown':
+            direction = 'down';
+            break;
+          case 'ArrowLeft':
+            direction = 'left';
+            break;
+          case 'ArrowRight':
+            direction = 'right';
+            break;
+        }
+        
+        if (direction && !gestureProcessed) {
+          changeFace(direction);
+          gestureProcessed = true;
+          
+          // Clear the gesture after processing
+          setTimeout(() => {
+            currentGestureId = null;
+          }, 300);
+        }
+      }
+    });
   } else {
     window.addEventListener('touchstart', onTouchStart, { passive: false });
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend', onTouchEnd, { passive: false });
   }
 
-  // --- CLICK HANDLER FOR CUBE ---
+  // Enhanced click handler with better mobile support
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
-
-  cubeContainer.addEventListener('click', event => {
+  
+  // Use both click and touch events for better cross-device support
+  const clickHandler = (event) => {
+    if (isAnimating) return;
+    
+    // Prevent default only for touch events to avoid double-firing
+    if (event.type === 'touchend') {
+      event.preventDefault();
+    }
+    
     const rect = cubeContainer.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    // Get correct coordinates for both mouse and touch
+    const clientX = event.clientX || (event.changedTouches && event.changedTouches[0].clientX);
+    const clientY = event.clientY || (event.changedTouches && event.changedTouches[0].clientY);
+    
+    if (!clientX || !clientY) return;
+    
+    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(cube);
     
-    console.log('Click detected', { mouseX: mouse.x, mouseY: mouse.y, intersects: intersects.length });
-    
     if (intersects.length > 0) {
       const faceIndex = Math.floor(intersects[0].faceIndex / 2);
-      console.log('Face clicked:', faceIndex, 'Link:', faceLinks[faceIndex]);
+      
+      // Add visual feedback for click
+      touchFeedback.style.left = `${clientX}px`;
+      touchFeedback.style.top = `${clientY}px`;
+      touchFeedback.classList.add('active');
+      
+      // Remove after animation completes
+      setTimeout(() => {
+        touchFeedback.classList.remove('active');
+      }, 500);
+      
+      // Add haptic feedback
+      if (navigator.vibrate && isMobile) {
+        navigator.vibrate(30);
+      }
+      
       window.open(faceLinks[faceIndex], '_blank');
-    } else {
-      console.log('No intersection with cube');
     }
-  });
+  };
+  
+  cubeContainer.addEventListener('click', clickHandler);
+  if (isMobile) {
+    // Use touchend for mobile to avoid delay
+    cubeContainer.addEventListener('touchend', clickHandler);
+  }
 
+  // Enhanced resize handler with debouncing
+  let resizeTimeout;
   window.addEventListener('resize', () => {
-    const w = cubeContainer.clientWidth;
-    const h = cubeContainer.clientHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+    // Clear previous timeout
+    clearTimeout(resizeTimeout);
+    
+    // Set new timeout to debounce resize events
+    resizeTimeout = setTimeout(() => {
+      // Update device detection
+      const wasLandscape = isLandscape;
+      const newIsLandscape = window.matchMedia('(orientation: landscape)').matches;
+      
+      // Only do full update if orientation changed
+      if (wasLandscape !== newIsLandscape) {
+        location.reload(); // Full reload on orientation change for best layout
+      } else {
+        // Simple resize for same orientation
+        const w = cubeContainer.clientWidth;
+        const h = cubeContainer.clientHeight;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+    }, 250);
   });
 
-  // Initialize content
-  updateContent(currentFrontFace);
-  requestAnimationFrame(updateScene);
+  // Initialize content and start animation loop once video is loaded
+  videoLoadPromise.then(() => {
+    // Hide loading indicator
+    loadingIndicator.classList.remove('active');
+    setTimeout(() => {
+      loadingIndicator.remove();
+    }, 300);
+    
+    updateContent(currentFrontFace);
+    requestAnimationFrame(updateScene);
+  });
 });

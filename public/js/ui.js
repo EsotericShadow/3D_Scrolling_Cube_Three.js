@@ -169,7 +169,7 @@ function startTutorialAnimation() {
     if (tutorialStep >= tutorialDirections.length * 2) {
       clearInterval(tutorialInterval);
     }
-  }, 2000);
+  }, 500);
 }
 
 /**

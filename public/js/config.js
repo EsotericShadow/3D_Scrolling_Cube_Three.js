@@ -14,7 +14,7 @@ const isLowPerfDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Oper
                         navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
 
 // Adaptive sizing based on device
-const cubeSize = isMobile ? 1.5 : 1;
+const cubeSize = isMobile ? 1.5 : 1.5;
 const wireframeScale = isMobile ? cubeSize / 2 : 0.5;
 
 // Adaptive animation speeds

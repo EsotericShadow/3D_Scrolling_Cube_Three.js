@@ -144,7 +144,7 @@ function createWireframe(scene) {
  * @returns {number} Index of the front face
  */
 function getFrontFace() {
-  const viewDir = new THREE.Vector3(0, 0, -1);
+  const viewDir = new THREE.Vector3(0, 0, 1);
   let maxDot = -1;
   let frontFaceIndex = 0;
   

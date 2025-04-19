@@ -169,7 +169,7 @@ function startTutorialAnimation() {
     if (tutorialStep >= tutorialDirections.length * 2) {
       clearInterval(tutorialInterval);
     }
-  }, 1500);
+  }, 750);
 }
 
 /**
@@ -182,22 +182,22 @@ function animateTutorialDirection(direction) {
   swipeHintArrow.style.left = '50%';
   swipeHintArrow.style.transform = 'translate(-50%, -50%)';
   
-  // Set arrow direction and position
+  // Set arrow direction, position, and color with 85% opacity
   switch(direction) {
     case 'up':
-      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path></svg>';
+      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path fill="#FFFFFFD9" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path></svg>';
       swipeHintArrow.style.top = '30%';
       break;
     case 'right':
-      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"></path></svg>';
+      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path fill="#FFFFFFD9" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"></path></svg>';
       swipeHintArrow.style.left = '70%';
       break;
     case 'down':
-      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"></path></svg>';
+      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path fill="#FFFFFFD9" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"></path></svg>';
       swipeHintArrow.style.top = '70%';
       break;
     case 'left':
-      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"></path></svg>';
+      swipeHintArrow.innerHTML = '<svg viewBox="0 0 24 24"><path fill="#FFFFFFD9" d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"></path></svg>';
       swipeHintArrow.style.left = '30%';
       break;
   }

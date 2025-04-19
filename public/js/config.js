@@ -15,7 +15,7 @@ const isLowPerfDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Oper
 
 // Adaptive sizing based on device
 const cubeSize = isMobile ? 1.5 : 1;
-const wireframeScale = isMobile ? cubeSize / 2 : 1;
+const wireframeScale = isMobile ? cubeSize / 2 : 0.5;
 
 // Adaptive animation speeds
 const lerpSpeed = hasReducedMotion ? 0.2 : (isLowPerfDevice ? 0.15 : 0.1);

@@ -17,7 +17,7 @@ let cube, wireframe, glowWireframe;
 let videoTexture, video;
 let isAnimating = false;
 let targetQuaternion = new THREE.Quaternion();
-let currentFrontFace = 4; // Start with front face
+let currentFrontFace = 0; // Start with front face
 
 // Map from face normals to face indices
 const faceNormals = [

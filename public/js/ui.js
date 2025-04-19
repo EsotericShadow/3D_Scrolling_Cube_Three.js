@@ -109,10 +109,10 @@ function highlightArrowIndicator(direction) {
       arrowClass = 'bottom';
       break;
     case 'left':
-      arrowClass = 'left';
+      arrowClass = 'right';
       break;
     case 'right':
-      arrowClass = 'right';
+      arrowClass = 'left';
       break;
   }
   

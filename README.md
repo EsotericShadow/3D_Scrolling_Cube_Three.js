@@ -60,10 +60,20 @@ Follow these steps to set up the project locally:
    Ensure the following files are in the root directory:
 
    ```
-   ├── index.html
-   ├── styles.css
-   ├── script.js
-   ├── cube_texture.mp4
+   ├── README.md
+   ├── public/
+   ├────── cube_texture.mp4
+   ├────── index.html
+   ├────── styles.css
+   ├────── js/
+   ├───────── config.js
+   ├───────── cube.js
+   ├───────── input-handler.js
+   ├───────── main.js   
+   ├───────── scene.js
+   ├───────── ui.js
+
+
    ```
 
 3. **Serve the Project**\
@@ -96,9 +106,9 @@ Follow these steps to set up the project locally:
 - **Tutorial**\
   A tutorial overlay appears on first load, demonstrating swipe directions. Dismiss it with the “Got it!” button or re-trigger via inactivity hints.
 - **Customizing Content**\
-  Edit the `faceContents` and `faceLinks` arrays in `script.js` to update headers, descriptions, and CTA links.
+  Edit the `faceContents` and `faceLinks` arrays in `config.js` to update headers, descriptions, and CTA links.
 
-Example configuration in `script.js`:
+Example configuration in `config.js`:
 
 ```javascript
 const faceContents = [
@@ -114,7 +124,7 @@ const faceContents = [
 Tailor the cube to your needs with these options:
 
 1. **Update Content & Links**\
-   Modify `faceContents` and `faceLinks` in `script.js` to change text and URLs for each face.
+   Modify `faceContents` and `faceLinks` in `config.js` to change text and URLs for each face.
 2. **Change Video Texture**\
    Replace `cube_texture.mp4` with another looping MP4. Adjust resolution for performance:
 
@@ -133,7 +143,7 @@ Tailor the cube to your needs with these options:
    }
    ```
 4. **Modify Tutorial**\
-   Customize `tutorialDirections` or animation timing in `script.js` to alter the tutorial sequence.
+   Customize `tutorialDirections` or animation timing in `ui.js` to alter the tutorial sequence.
 
 ---
 
@@ -161,9 +171,9 @@ Cubic Matrix Navigation is poised to become a platform for user-generated naviga
   - Verify `touch-action: none` in `styles.css` to prevent page scrolling.
   - Ensure no overlapping elements block touch or wheel events.
 - **Performance Lag**
-  - Test on low-performance devices. Reduce video resolution or disable glow effects in `script.js`.
+  - Test on low-performance devices. Reduce video resolution or disable glow effects in `ui.js`.
 - **Tutorial Not Showing**
-  - Confirm `showTutorial` is called after video loading in `script.js`.
+  - Confirm `showTutorial` is called after video loading in `ui.js`.
 
 ---
 

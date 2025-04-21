@@ -52,8 +52,8 @@ Follow these steps to set up the project locally:
 1. **Clone or Download the Repository**
 
    ```bash
-   git clone <repository-url>
-   cd cubic-matrix-navigation
+   git clone https://github.com/EsotericShadow/3D_Scrolling_Cube_Three.js.git
+   cd 3D_Scrolling_Cube_Three.js-main
    ```
 
 2. **Verify Project Structure**\

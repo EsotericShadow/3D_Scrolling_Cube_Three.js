@@ -34,7 +34,7 @@ This project is perfect for creating engaging navigation hubs to share multiple 
 
 ## 🛠️ Prerequisites
 
-To run Cubic Matrix Navigation, ensure you have:
+To run the Polyface, ensure you have:
 
 - **Modern Web Browser** 🌐\
   Chrome, Firefox, Safari, or Edge (latest versions recommended).
@@ -149,7 +149,7 @@ Tailor the cube to your needs with these options:
 
 ## 🔮 Future Development
 
-Cubic Matrix Navigation is poised to become a platform for user-generated navigation cubes. Planned features include:
+The Cubic Polyface Navigation Hub is poised to become a platform for user-generated navigation cubes. Planned features include:
 
 - **User Dashboard** 🖱️\
   A web interface for users to input cube content (links, text, videos) via forms.
@@ -179,7 +179,7 @@ Cubic Matrix Navigation is poised to become a platform for user-generated naviga
 
 ## 🤝 Contributing
 
-We welcome contributions to enhance Cubic Matrix Navigation! To contribute:
+We welcome contributions to enhance the polyface concept! To contribute:
 
 1. Fork the repository.
 2. Create a feature branch:

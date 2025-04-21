@@ -4,7 +4,12 @@
 
 This project is perfect for creating engaging navigation hubs to share multiple links or content categories in a compact, visually stunning format. Future plans include a user-friendly interface for generating and managing personalized cubes through customizable forms.
 
-[![3D Cube Demo](demo-cube.gif)](https://3-d-scrolling-cube-three-js.vercel.app)
+<div align="center" style="margin: 20px 0;">
+  <a href="https://3-d-scrolling-cube-three-js.vercel.app">
+    <img src="demo-cube.gif" alt="3D Cube Demo" style="max-width: 600px; width: 100%; border-radius: 12px;" />
+  </a>
+</div>
+
 
 
 
